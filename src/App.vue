@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <img src="https://www.facebook.com/photo.php?fbid=10211179767304901&l=10f4839e6d">
+    <img src="./assets/logo.png">
     <router-view/>
   </div>
 </template>
