@@ -1,11 +1,9 @@
 <template>
   <div id="app">
     <div class="container">
-      <div class="Chart__list">
-        <div class="Chart">
-          <h2>Linechart</h2>
-          <line-example></line-example>
-        </div>
+      <div class="Chart">
+        <h2>Stock Levels</h2>
+        <line-example></line-example>
       </div>
     </div>
   </div>
