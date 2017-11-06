@@ -1,40 +1,39 @@
 <template>
   <div id="app">
-    <img src="./assets/logo.png">
-    <router-view/>
+    <div class="container">
+      <div class="Chart__list">
+        <div class="Chart">
+          <h2>Linechart</h2>
+          <line-example></line-example>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
+
 <script>
-  import { Bar } from 'vue-chartjs';
+  import LineExample from './components/LineChart.jsx';
 
   export default {
-    extends: Bar,
-    data: () => ({
-      datacollection: {
-        labels: ['January', 'February'],
-        datasets: [
-          {
-            label: 'Data One',
-            backgroundColor: '#f87979',
-            data: [40, 20],
-          },
-        ],
-      },
-    }),
-    mounted() {
-      this.renderChart(this.datacollection, { responsive: true, maintainAspectRatio: false });
+    name: 'app',
+    components: {
+      LineExample,
     },
   };
 </script>
 
 <style>
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+  #app {
+    font-family: 'Avenir', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    color: #2c3e50;
+    margin-top: 60px;
+  }
+  .container {
+    max-width: 800px;
+    margin:  0 auto;
+  }
 </style>
