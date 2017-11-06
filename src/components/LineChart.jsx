@@ -1,5 +1,11 @@
 import { Line } from 'vue-chartjs';
 
+// TODO change style global defaults, so that we avoid repeating ourselves (Chart.defaults.global)
+
+/* const defaults = {
+  backgroundColor: 'rgba(0, 0, 0, 0)',
+} */
+
 export default {
   extends: Line,
   data() {
@@ -9,19 +15,31 @@ export default {
         labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
         datasets: [{
           label: 'Kondomer',
-          backgroundColor: '#f87979',
+          borderColor: '#0016bf', // Color of the line
+          backgroundColor: 'rgba(0, 0, 0, 0)', // Makes the fill under the line 100% transparent
           pointBackgroundColor: 'white',
           borderWidth: 1,
           pointBorderColor: '#249EBF',
           // Data to be represented on y-axis
           data: [40, 20, 30, 50, 90, 10, 20, 40, 50, 70, 90, 100],
         }, {
-          label: 'AntiHiv 900',
-          backgroundColor: '#f12373',
-          pointBackgroundColor: 'white',
+          label: 'Min',
+          borderDash: [40, 10],
+          borderColor: '#bf000a',
+          pointRadius: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0)',
           borderWidth: 1,
-          pointBorderColor: '#343EBF',
-          data: [20, 40, 30, 10, 0, 80, 40, 20, 10, 0, 0, 0],
+          pointBorderColor: '#6d6e6c',
+          data: [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20],
+        }, {
+          label: 'Max',
+          borderDash: [40, 10],
+          borderColor: '#bf000a',
+          pointRadius: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0)',
+          borderWidth: 1,
+          pointBorderColor: '#6d6e6c',
+          data: [50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
         }],
       },
       // Chart.js options that controls the appearance of the chart
