@@ -28,10 +28,11 @@
     data() {
       return {
         msg: 'Welcome to Your Vue.js App',
-        programs: [],
         organizations: [],
         stockItems: [],
-        data: [],
+        data: {},
+        selectedItem: null,
+        selectedOrg: null,
       };
     },
     created() {
@@ -60,15 +61,17 @@
           this.stockItems = response.body.dataElements;
         });
       },
-      getDataForGraph() { // TODO Not working yet
-        this.$http.get(`https://inf5750.dhis2.org/demo/api/26/analytics?dimension=dx:${this.selectedItem}` +
-        `&dimension=pe:2016Q1;2016Q2&dimension=ou:${this.selectedOrg}`, {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          this.data = response.body;
-        });
+      getDataForGraph() {
+        if (this.selectedItem && this.selectedOrg) {
+          this.$http.get(`https://inf5750.dhis2.org/demo/api/26/analytics?dimension=dx:${this.selectedItem}`
+            + `&dimension=pe:2016Q1;2016Q2&dimension=ou:${this.selectedOrg}`, {
+              headers: {
+                Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+              },
+            }).then((response) => {
+              this.data = response.body;
+            });
+        }
       },
     },
   };
