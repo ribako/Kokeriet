@@ -2,7 +2,7 @@
   <div class="hello">
     <h1>{{ msg }}</h1>
     <select>
-      <option v-for="program in programs" :value="program.id">{{program.displayName}}</option>
+      <option v-for="organization in organizations" :value="organization.id">{{organization.displayName}}</option>
     </select>
     <line-example/>
   </div>
@@ -10,6 +10,11 @@
 
 <script>
   import LineExample from './LineChart.jsx';
+
+  /* const username = 'student';
+  const password = 'INF5750!';
+  const buf = new Buffer(`${username}:${password}`.toString('base64'));
+  const auth = `Basic ${buf}`; */
 
   export default {
     name: 'HelloWorld',
@@ -20,19 +25,20 @@
       return {
         msg: 'Welcome to Your Vue.js App',
         programs: [],
+        organizations: [],
       };
     },
     created() {
-      this.fetchPrograms();
+      this.fetchOrganizations();
     },
     methods: {
-      fetchPrograms() {
-        this.$http.get('https://play.dhis2.org/demo/api/programs.json', {
+      fetchOrganizations() {
+        this.$http.get('https://inf5750.dhis2.org/demo/api/organisationUnits?paging=false', {
           headers: {
-            Authorization: 'Basic a29rZXJpZXQ6T2JsaWcuc29sdXRpb241',
+            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
         }).then((response) => {
-          this.programs = response.body.programs;
+          this.organizations = response.body.organisationUnits;
         });
       },
     },
