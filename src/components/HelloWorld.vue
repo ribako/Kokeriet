@@ -1,9 +1,13 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
-    <select>
-      <option v-for="organization in organizations" :value="organization.id">{{organization.displayName}}</option>
+    <select v-model="selectedOrg">
+      <option v-for="org in organizations" :value="org.id">{{org.displayName}}</option>
     </select>
+    <select v-model="selectedItem">
+      <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
+    </select>
+    <h1>{{ data }}</h1>
     <line-example/>
   </div>
 </template>
@@ -26,10 +30,16 @@
         msg: 'Welcome to Your Vue.js App',
         programs: [],
         organizations: [],
+        stockItems: [],
+        data: [],
       };
     },
     created() {
       this.fetchOrganizations();
+      this.fetchStockItems();
+    },
+    updated() {
+      this.getDataForGraph();
     },
     methods: {
       fetchOrganizations() {
@@ -39,6 +49,25 @@
           },
         }).then((response) => {
           this.organizations = response.body.organisationUnits;
+        });
+      },
+      fetchStockItems() {
+        this.$http.get('https://inf5750.dhis2.org/demo/api/dataElements?paging=false', {
+          headers: {
+            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+          },
+        }).then((response) => {
+          this.stockItems = response.body.dataElements;
+        });
+      },
+      getDataForGraph() { // TODO Not working yet
+        this.$http.get(`https://inf5750.dhis2.org/demo/api/26/analytics?dimension=dx:${this.selectedItem}` +
+        `&dimension=pe:2016Q1;2016Q2&dimension=ou:${this.selectedOrg}`, {
+          headers: {
+            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+          },
+        }).then((response) => {
+          this.data = response.body;
         });
       },
     },
