@@ -1,15 +1,24 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
-    <select>
-      <option v-for="program in programs" :value="program.id">{{program.displayName}}</option>
+    <select v-model="selectedOrg">
+      <option v-for="org in organizations" :value="org.id">{{org.displayName}}</option>
     </select>
+    <select v-model="selectedItem">
+      <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
+    </select>
+    <h1>{{ data }}</h1>
     <line-example/>
   </div>
 </template>
 
 <script>
   import LineExample from './LineChart.jsx';
+
+  /* const username = 'student';
+  const password = 'INF5750!';
+  const buf = new Buffer(`${username}:${password}`.toString('base64'));
+  const auth = `Basic ${buf}`; */
 
   export default {
     name: 'HelloWorld',
@@ -19,21 +28,50 @@
     data() {
       return {
         msg: 'Welcome to Your Vue.js App',
-        programs: [],
+        organizations: [],
+        stockItems: [],
+        data: {},
+        selectedItem: null,
+        selectedOrg: null,
       };
     },
     created() {
-      this.fetchPrograms();
+      this.fetchOrganizations();
+      this.fetchStockItems();
+    },
+    updated() {
+      this.getDataForGraph();
     },
     methods: {
-      fetchPrograms() {
-        this.$http.get('https://play.dhis2.org/demo/api/programs.json', {
+      fetchOrganizations() {
+        this.$http.get('https://inf5750.dhis2.org/demo/api/organisationUnits?paging=false', {
           headers: {
-            Authorization: 'Basic a29rZXJpZXQ6T2JsaWcuc29sdXRpb241',
+            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
         }).then((response) => {
-          this.programs = response.body.programs;
+          this.organizations = response.body.organisationUnits;
         });
+      },
+      fetchStockItems() {
+        this.$http.get('https://inf5750.dhis2.org/demo/api/dataElements?paging=false', {
+          headers: {
+            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+          },
+        }).then((response) => {
+          this.stockItems = response.body.dataElements;
+        });
+      },
+      getDataForGraph() {
+        if (this.selectedItem && this.selectedOrg) {
+          this.$http.get(`https://inf5750.dhis2.org/demo/api/26/analytics?dimension=dx:${this.selectedItem}`
+            + `&dimension=pe:2016Q1;2016Q2&dimension=ou:${this.selectedOrg}`, {
+              headers: {
+                Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+              },
+            }).then((response) => {
+              this.data = response.body;
+            });
+        }
       },
     },
   };
