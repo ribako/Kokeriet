@@ -1,5 +1,6 @@
 <template>
   <div id="app">
+    <div id="menu"><a href="#/">Graph</a> - <a href="#/other">Other ting</a></div>
     <router-view/>
   </div>
 </template>
