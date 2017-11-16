@@ -41,10 +41,11 @@
     },
     updated() {
       this.getDataForGraph();
+      this.updateGraph();
     },
     methods: {
       fetchOrganizations() {
-        this.$http.get('https://inf5750.dhis2.org/demo/api/organisationUnits?paging=false', {
+        this.$http.get('https://inf5750.dhis2.org/training/api/organisationUnits?paging=false', {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
@@ -53,7 +54,7 @@
         });
       },
       fetchStockItems() {
-        this.$http.get('https://inf5750.dhis2.org/demo/api/dataElements?paging=false', {
+        this.$http.get('https://inf5750.dhis2.org/training/api/dataElements?paging=false', {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
@@ -64,7 +65,7 @@
       getDataForGraph() {
         if (this.selectedItem && this.selectedOrg) {
           this.$http.get(`https://inf5750.dhis2.org/demo/api/26/analytics?dimension=dx:${this.selectedItem}`
-            + `&dimension=pe:2016Q1;2016Q2&dimension=ou:${this.selectedOrg}`, {
+            + `&dimension=pe:2017Q1;2017Q2&dimension=ou:${this.selectedOrg}`, {
               headers: {
                 Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
               },
@@ -72,6 +73,10 @@
               this.data = response.body;
             });
         }
+      },
+      updateGraph() {
+        this.LineExample.datacollection.labels[0] = 'Basd';
+        this.LineExample.update();
       },
     },
   };

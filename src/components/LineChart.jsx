@@ -1,4 +1,4 @@
-import { Line } from 'vue-chartjs';
+import { Line, mixins } from 'vue-chartjs';
 
 // TODO change style global defaults, so that we avoid repeating ourselves (Chart.defaults.global)
 
@@ -10,6 +10,7 @@ export default {
   extends: Line,
   data() {
     return {
+      mixins: [mixins.reactiveProp],
       datacollection: {
         // Data to be represented on x-axis
         labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
