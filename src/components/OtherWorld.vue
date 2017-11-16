@@ -63,8 +63,8 @@
       },
       getDataForGraph() {
         this.numDivs.forEach((id, i) => {
-          if (this.selectedItem && this.numDivs[i] && this.numDivs[i] !== 0 && !this.data[this.numDivs[i]]) {
-            console.log(id, i);
+          if (this.selectedItem && this.numDivs[i] && this.numDivs[i] !== 0
+            && !this.data[this.numDivs[i]]) {
             this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItem}`
               + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${id}`, {
                 headers: {
