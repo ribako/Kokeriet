@@ -7,18 +7,15 @@
     <select v-model="selectedItem">
       <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
     </select>
-    <h1>{{ data }}</h1>
-    <line-example/>
+    <h1>{{ stockData }}</h1>
+    <line-example :chart-data="datacollection" :options="{responsive: true, maintainAspectRatio: false}"></line-example>
   </div>
 </template>
 
 <script>
+  // import Vue from 'vue';
   import LineExample from './LineChart.jsx';
 
-  /* const username = 'student';
-  const password = 'INF5750!';
-  const buf = new Buffer(`${username}:${password}`.toString('base64'));
-  const auth = `Basic ${buf}`; */
 
   export default {
     name: 'HelloWorld',
@@ -30,9 +27,16 @@
         msg: 'Welcome to Your Vue.js App',
         organizations: [],
         stockItems: [],
-        data: {},
+        stockData: {},
         selectedItem: null,
         selectedOrg: null,
+        datacollection: {
+          labels: [],
+          datasets: [{
+            label: 'Stuff',
+            data: [],
+          }],
+        },
       };
     },
     created() {
@@ -41,7 +45,8 @@
     },
     updated() {
       this.getDataForGraph();
-      this.updateGraph();
+    },
+    mounted() {
     },
     methods: {
       fetchOrganizations() {
@@ -64,19 +69,21 @@
       },
       getDataForGraph() {
         if (this.selectedItem && this.selectedOrg) {
-          this.$http.get(`https://inf5750.dhis2.org/demo/api/26/analytics?dimension=dx:${this.selectedItem}`
-            + `&dimension=pe:2017Q1;2017Q2&dimension=ou:${this.selectedOrg}`, {
+          this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItem}`
+            + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${this.selectedOrg}`, {
               headers: {
                 Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
               },
             }).then((response) => {
-              this.data = response.body;
+              this.stockData = response.body.rows;
+              // Should really move the following to a method which isn't called every god damn ms
+              // this.datacollection.labels = [this.stockData[0][1], this.stockData[1][1]];
+              this.datacollection.datasets.pop();
+              this.datacollection.datasets.push([this.stockData[0][3], this.stockData[1][3]]);
+              console.log(this.datacollection.labels);
+              console.log(this.datacollection.datasets[0]);
             });
         }
-      },
-      updateGraph() {
-        this.LineExample.datacollection.labels[0] = 'Basd';
-        this.LineExample.update();
       },
     },
   };
