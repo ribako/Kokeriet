@@ -21,6 +21,8 @@
 </template>
 
 <script>
+  import Vue from 'vue';
+
   export default {
     name: 'OtherWorld',
     data() {
@@ -61,14 +63,15 @@
       },
       getDataForGraph() {
         this.numDivs.forEach((id, i) => {
-          if (this.selectedItem && this.numDivs[i] && this.numDivs[i] !== 0) {
+          if (this.selectedItem && this.numDivs[i] && this.numDivs[i] !== 0
+            && !this.data[this.numDivs[i]]) {
             this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItem}`
-              + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${this.numDivs[i]}`, {
+              + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${id}`, {
                 headers: {
                   Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
                 },
               }).then((response) => {
-                this.data[id] = response.body;
+                Vue.set(this.data, id, response.body);
               });
           }
         });
