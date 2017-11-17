@@ -28,6 +28,8 @@
         organizations: [],
         stockItems: [],
         stockData: {},
+        oldItem: null,
+        oldOrg: null,
         selectedItem: null,
         selectedOrg: null,
         datacollection: {
@@ -68,7 +70,9 @@
         });
       },
       getDataForGraph() {
-        if (this.selectedItem && this.selectedOrg) {
+        if (this.selectedItem !== this.oldItem && this.selectedOrg !== this.oldOrg) {
+          this.oldItem = this.selectedItem;
+          this.oldOrg = this.selectedOrg;
           this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItem}`
             + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${this.selectedOrg}`, {
               headers: {
@@ -77,11 +81,12 @@
             }).then((response) => {
               this.stockData = response.body.rows;
               // Should really move the following to a method which isn't called every god damn ms
-              // this.datacollection.labels = [this.stockData[0][1], this.stockData[1][1]];
-              this.datacollection.datasets.pop();
-              this.datacollection.datasets.push([this.stockData[0][3], this.stockData[1][3]]);
+              // this.datacollection.labels = [this.stockData[0][1], this.stockData[1][1]]
+              this.stockData.forEach((elem) => {
+                this.datacollection.labels.push(elem[1]);
+                this.datacollection.datasets[0].data.push(10);
+              });
               console.log(this.datacollection.labels);
-              console.log(this.datacollection.datasets[0]);
             });
         }
       },
