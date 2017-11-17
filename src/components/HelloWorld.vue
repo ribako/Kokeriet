@@ -80,6 +80,13 @@
               },
             }).then((response) => {
               this.stockData = response.body.rows;
+              function sortFunction(a, b) {
+                if (a[1] === b[1]) {
+                  return 0;
+                }
+                return (a[1] < b[1]) ? -1 : 1;
+              }
+              this.stockData.sort(sortFunction);
               // Should really move the following to a method which isn't called every god damn ms
               // this.datacollection.labels = [this.stockData[0][1], this.stockData[1][1]]
               this.stockData.forEach((elem) => {
