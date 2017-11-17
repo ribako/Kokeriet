@@ -84,7 +84,7 @@
               // this.datacollection.labels = [this.stockData[0][1], this.stockData[1][1]]
               this.stockData.forEach((elem) => {
                 this.datacollection.labels.push(elem[1]);
-                this.datacollection.datasets[0].data.push(10);
+                this.datacollection.datasets[0].data.push(elem[3]);
               });
               console.log(this.datacollection.labels);
             });
