@@ -20,7 +20,6 @@
 
   // TODO install awesome slider from either https://nightcatsama.github.io/vue-slider-component/example/#QuickStart or somewhere else
 
-
   export default {
     name: 'HelloWorld',
     components: {
@@ -94,7 +93,8 @@
         });
       },
       getDataForGraph() {
-        if (this.selectedItem !== this.oldItem && this.selectedOrg !== this.oldOrg) {
+        if (this.selectedItem && this.selectedOrg && (this.selectedItem !== this.oldItem
+            || this.selectedOrg !== this.oldOrg)) {
           const labels = [];
           const datasets = [{
             label: 'Data',
@@ -134,12 +134,14 @@
               },
             }).then((response) => {
               this.stockData = response.body.rows;
+
               function sortFunction(a, b) {
                 if (a[1] === b[1]) {
                   return 0;
                 }
                 return (a[1] < b[1]) ? -1 : 1;
               }
+
               this.stockData.sort(sortFunction);
               this.stockData.forEach((elem) => {
                 labels.push(elem[1]);
