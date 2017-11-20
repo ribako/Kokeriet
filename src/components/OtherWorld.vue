@@ -72,6 +72,9 @@
         });
       },
       getDataForGraph() {
+        if (this.oldSelectedItem !== this.selectedItem) {
+          this.minMaxScale.max = 0;
+        }
         this.numDivs.forEach((id, i) => {
           if (this.selectedItem && this.numDivs[i] && this.numDivs[i] !== 0
             && (!this.data[this.numDivs[i]] || this.oldSelectedItem !== this.selectedItem)) {
@@ -87,7 +90,8 @@
                   }
                   return (a[1] < b[1]) ? -1 : 1;
                 });
-                if (response.body.rows[response.body.rows.length - 1][3] * 2 > this.minMaxScale.max) {
+                if (response.body.rows[response.body.rows.length - 1][3] * 1.25
+                  > this.minMaxScale.max) {
                   this.minMaxScale.max = response.body.rows[response.body.rows.length - 1][3] * 2;
                 }
                 Vue.set(this.data, id, response.body);
