@@ -8,7 +8,7 @@
       <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
     </select>
     <vue-slider v-model="value" :min="this.min" :max="this.max" :disabled="this.disabled"></vue-slider>
-    <line-example ref="graphElem" :chart-data="datacollection" :options="options"></line-example>
+    <line-example id="gE" ref="graphElem" :chart-data="datacollection" :options="options"></line-example>
   </div>
 </template>
 
@@ -17,14 +17,20 @@
   import vueSlider from 'vue-slider-component';
   import LineExample from './LineChart.jsx';
 
-  function calculateGradientFill(ctx, scale, height, baseColor, gradientColor, value) {
+  function calculateGradientFill(ctx, scale, height, baseColor, gradientColor, gradientColor2, value,
+    value2) {
     const yPos = scale.getPixelForValue(value);
+    const yPos2 = scale.getPixelForValue(value2);
     const grd = ctx.createLinearGradient(0, height, 0, 0);
     const gradientStop = 1 - (yPos / height);
+    const gradientStop2 = 1 - (yPos2 / height);
+
 
     try {
       grd.addColorStop(0, gradientColor);
-      grd.addColorStop(gradientStop, gradientColor);
+      grd.addColorStop(gradientStop2, gradientColor);
+      grd.addColorStop(gradientStop2, gradientColor2);
+      grd.addColorStop(gradientStop, gradientColor2);
       grd.addColorStop(gradientStop, baseColor);
       grd.addColorStop(1.00, baseColor);
 
@@ -206,16 +212,19 @@
           };
           this.oldValue = this.value;
           this.disabled = false;
-          const chartInstance = this.$data;
-          const node = chartInstance;
-          console.log(chartInstance);
+          /* eslint-disable */
+          const chartInstance = this.$refs.graphElem._data._chart;
+          const node = chartInstance.chart.ctx;
+          console.log(node);
           const fill = calculateGradientFill(
-            node.getContext('2d'),
+            node,
             chartInstance.scales['y-axis-0'],
             chartInstance.chart.height,
             '#0016bf',
-            '#bf089f',
-            this.minMax[1],
+            '#00bf0a',
+            '#bf0400',
+            this.value[1],
+            this.value[0],
           );
           chartInstance.chart.config.data.datasets[0].borderColor = fill;
         }
