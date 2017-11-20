@@ -7,8 +7,8 @@
     <select v-model="selectedItem">
       <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
     </select>
-    <vue-slider ref="slider" v-model="value" :min="this.min" :max="this.max" :disabled="this.disabled"></vue-slider>
-    <line-example :chart-data="datacollection" :options="options"></line-example>
+    <vue-slider v-model="value" :min="this.min" :max="this.max" :disabled="this.disabled"></vue-slider>
+    <line-example ref="graphElem" :chart-data="datacollection" :options="options"></line-example>
   </div>
 </template>
 
@@ -206,7 +206,18 @@
           };
           this.oldValue = this.value;
           this.disabled = false;
-          calculateGradientFill();
+          const chartInstance = this.$data;
+          const node = chartInstance;
+          console.log(chartInstance);
+          const fill = calculateGradientFill(
+            node.getContext('2d'),
+            chartInstance.scales['y-axis-0'],
+            chartInstance.chart.height,
+            '#0016bf',
+            '#bf089f',
+            this.minMax[1],
+          );
+          chartInstance.chart.config.data.datasets[0].borderColor = fill;
         }
       },
     },
