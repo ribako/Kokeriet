@@ -7,23 +7,39 @@
     <select v-model="selectedItem">
       <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
     </select>
-    <input type="range" min="1" max="100" value="1" class="slider" id="min">
-    <input type="range" min="1" max="100" value="1" class="slider" id="max">
-    <!--<h1>{{ stockData }}</h1>-->
+    <vue-slider ref="slider" v-model="value" :min="this.min" :max="this.max" :disabled="this.disabled"></vue-slider>
     <line-example :chart-data="datacollection" :options="options"></line-example>
   </div>
 </template>
 
 <script>
   // import Vue from 'vue';
+  import vueSlider from 'vue-slider-component';
   import LineExample from './LineChart.jsx';
 
-  // TODO install awesome slider from either https://nightcatsama.github.io/vue-slider-component/example/#QuickStart or somewhere else
+  function calculateGradientFill(ctx, scale, height, baseColor, gradientColor, value) {
+    const yPos = scale.getPixelForValue(value);
+    const grd = ctx.createLinearGradient(0, height, 0, 0);
+    const gradientStop = 1 - (yPos / height);
+
+    try {
+      grd.addColorStop(0, gradientColor);
+      grd.addColorStop(gradientStop, gradientColor);
+      grd.addColorStop(gradientStop, baseColor);
+      grd.addColorStop(1.00, baseColor);
+
+      return grd;
+    } catch (e) {
+      console.warn('ConfigError: Chart.Bands.js had a problem applying one or more colors please check that you have selected valid color strings');
+      return baseColor;
+    }
+  }
 
   export default {
     name: 'HelloWorld',
     components: {
       LineExample,
+      vueSlider,
     },
     data() {
       return {
@@ -33,12 +49,30 @@
         stockData: {},
         oldItem: null,
         oldOrg: null,
-        oldMin: null,
-        oldMax: null,
-        min: null,
-        max: null,
+        oldValue: null,
         selectedItem: null,
         selectedOrg: null,
+        disabled: true,
+        min: 0,
+        max: 100,
+        value: [
+          0,
+          100,
+        ],
+        width: '100%',
+        height: 8,
+        dotSize: 16,
+        bgStyle: {
+          backgroundColor: '#fff',
+          boxShadow: 'inset 0.5px 0.5px 3px 1px rgba(0,0,0,.36)',
+        },
+        tooltipStyle: {
+          backgroundColor: '#666',
+          borderColor: '#666',
+        },
+        processStyle: {
+          backgroundColor: '#999',
+        },
         datacollection: {},
         options: {
           scales: {
@@ -70,6 +104,7 @@
     },
     updated() {
       this.getDataForGraph();
+      this.updateMinMax();
     },
     mounted() {
     },
@@ -146,14 +181,32 @@
               this.stockData.forEach((elem) => {
                 labels.push(elem[1]);
                 datasets[0].data.push(elem[3]);
-                datasets[1].data.push(50000);
-                datasets[2].data.push(80000);
               });
               this.datacollection = {
                 labels,
                 datasets,
               };
+              this.max = 1.25 * Math.max(...this.datacollection.datasets[0].data);
             });
+        }
+      },
+      updateMinMax() {
+        if (this.value !== this.oldValue && this.datacollection.datasets[0]) {
+          const labels = this.datacollection.labels;
+          const datasets = this.datacollection.datasets;
+          datasets[1].data = [];
+          datasets[2].data = [];
+          datasets[0].data.forEach(() => {
+            datasets[1].data.push(this.value[0]);
+            datasets[2].data.push(this.value[1]);
+          });
+          this.datacollection = {
+            labels,
+            datasets,
+          };
+          this.oldValue = this.value;
+          this.disabled = false;
+          calculateGradientFill();
         }
       },
     },
