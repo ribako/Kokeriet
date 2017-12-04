@@ -7,6 +7,8 @@
     <select v-model="selectedItem">
       <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
     </select>
+    <input v-model="value[0]" type="number" :disable="this.disabled">
+    <input v-model="value[1]" type="number" :disable="this.disabled">
     <vue-slider v-model="value" :min="this.min" :max="this.max" :disabled="this.disabled"></vue-slider>
     <line-example id="gE" ref="graphElem" :chart-data="datacollection" :options="options"></line-example>
   </div>
@@ -185,7 +187,7 @@
 
               this.stockData.sort(sortFunction);
               this.stockData.forEach((elem) => {
-                labels.push(elem[1]);
+                labels.push(`${elem[1].slice(0, 4)} - ${elem[1].slice(4)}`);
                 datasets[0].data.push(elem[3]);
               });
               this.datacollection = {
