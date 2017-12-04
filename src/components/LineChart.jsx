@@ -16,6 +16,10 @@ export default {
     });
 
     this.renderChart(this.chartData, this.options);
+    /* eslint-disable */
+    const chart = this._data._chart;
+    /* eslint-enable */
+    console.log(chart);
   },
 };
 
