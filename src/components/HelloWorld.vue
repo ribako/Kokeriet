@@ -95,11 +95,6 @@
           maintainAspectRatio: false,
         },
         data: [],
-        methods: {
-          itemClick(node) {
-            console.log(`${node.model.text} clicked !`);
-          },
-        },
       };
     },
     created() {
@@ -114,6 +109,10 @@
     mounted() {
     },
     methods: {
+      itemClick(node) {
+        console.log(`${node.model.text} clicked !`);
+        this.selectedOrg = node.model.id;
+      },
       fetchOrganizations() {
         this.$http.get('https://inf5750.dhis2.org/training/api/organisationUnits?paging=false', {
           headers: {
@@ -272,6 +271,17 @@
             cnt += 1;
           });
         });
+      },
+      getHierarchyv2() {
+        for (let i = 1; i < 6; i += 1) {
+          this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
+            headers: {
+              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+            },
+          }).then((response) => {
+            this.organizations2 = response.body.organisationUnits;
+          });
+        }
       },
     },
   };
