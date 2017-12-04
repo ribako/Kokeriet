@@ -8,6 +8,13 @@ export default {
   mixins: [reactiveProp],
   props: ['options'],
   mounted() {
+    this.addPlugin({
+      id: 'my-plugin',
+      beforeInit(chart) {
+        console.log('asd');
+      },
+    });
+
     this.renderChart(this.chartData, this.options);
   },
 };

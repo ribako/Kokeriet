@@ -1,23 +1,26 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
-    <select v-model="selectedItem">
+    <div class="menu"><div class="topbar"><div><p>Usage: </p><select class="topsel" v-model="selectedItemUsage">
       <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
-    </select>
-    <vue-slider :min="minMaxScale.min" :max="minMaxScale.max" v-model="minMax"></vue-slider>
+    </select></div>
+    <div><p>Stock: </p><select class="topsel" v-model="selectedItemStock">
+      <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
+    </select></div></div>
+    <vue-slider :bg-style="{color: '#9C27B0'}" :min="minMaxScale.min" :max="minMaxScale.max" v-model="minMax"></vue-slider></div>
     <div class="status">
       <div class="status-box" v-for="(id, i) in numDivs">
-        <select v-model="numDivs[i]">
+        <select class="orgSel" v-model="numDivs[i]">
           <option v-for="org in organizations" :value="org.id">{{org.displayName}}</option>
         </select>
-        {{ i }}
-        {{ id }}
-        {{ data[id] ? data[id].metaData.dimensions.dx[0] : "nope" }}
+        <p class="info-text">
+          {{ data[id] && avgUse[id] ? Math.round(data[id].rows[0][3] / avgUse[id]) + "m" : "?" }}
+        </p>
         <div class="circle"
-             :class="data[id] ? ((data[id].rows[data[id].rows.length-1][3] > minMax[0]) ? ((data[id].rows[data[id].rows.length-1][3] < minMax[1]) ? 'color-green' : 'color-blue') : 'color-red') : 'color-white'"></div>
+             :class="data[id] ? ((data[id].rows[0][3] > minMax[0]) ? ((data[id].rows[0][3] < minMax[1]) ? 'color-green' : 'color-blue') : 'color-red') : 'color-white'"></div>
       </div>
       <div class="status-box" v-on:click="numDivs.push(0)">
-        Add
+        <span class="plus">+</span>
       </div>
     </div>
   </div>
@@ -41,8 +44,11 @@
         minMax: [0, 0],
         minMaxScale: { min: 0, max: 1 },
         data: {},
-        selectedItem: null,
-        oldSelectedItem: null,
+        avgUse: {},
+        selectedItemUsage: null,
+        oldSelectedItemUsage: null,
+        selectedItemStock: null,
+        oldSelectedItemStock: null,
       };
     },
     created() {
@@ -50,7 +56,8 @@
       this.fetchStockItems();
     },
     updated() {
-      this.getDataForGraph();
+      this.getUsageData();
+      this.getStockData();
     },
     methods: {
       fetchOrganizations() {
@@ -71,34 +78,42 @@
           this.stockItems = response.body.dataElements;
         });
       },
-      getDataForGraph() {
-        if (this.oldSelectedItem !== this.selectedItem) {
-          this.minMaxScale.max = 0;
-        }
+      getUsageData() {
         this.numDivs.forEach((id, i) => {
-          if (this.selectedItem && this.numDivs[i] && this.numDivs[i] !== 0
-            && (!this.data[this.numDivs[i]] || this.oldSelectedItem !== this.selectedItem)) {
-            this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItem}`
+          if (this.selectedItemUsage && this.numDivs[i] && this.numDivs[i] !== 0
+            && !this.data[this.numDivs[i]]) {
+            this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItemUsage}`
               + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${id}`, {
                 headers: {
                   Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
                 },
               }).then((response) => {
-                response.body.rows.sort((a, b) => {
-                  if (a[1] === b[1]) {
-                    return 0;
-                  }
-                  return (a[1] < b[1]) ? -1 : 1;
+                let totalUse = 0;
+                response.body.rows.forEach((month) => {
+                  totalUse += parseInt(month[3], 10);
                 });
-                if (response.body.rows[response.body.rows.length - 1][3] * 1.25
-                  > this.minMaxScale.max) {
-                  this.minMaxScale.max = response.body.rows[response.body.rows.length - 1][3] * 2;
+                Vue.set(this.avgUse, id, totalUse / 12);
+              });
+          }
+        });
+      },
+      getStockData() {
+        this.numDivs.forEach((id, i) => {
+          if (this.selectedItemStock && this.numDivs[i] && this.numDivs[i] !== 0
+            && !this.data[this.numDivs[i]]) {
+            this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItemStock}`
+              + `&dimension=pe:LAST_MONTH&dimension=ou:${id}`, {
+                headers: {
+                  Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+                },
+              }).then((response) => {
+                if (response.body.rows[0][3] * 1.25 > this.minMaxScale.max) {
+                  this.minMaxScale.max = response.body.rows[0][3] * 1.25;
                 }
                 Vue.set(this.data, id, response.body);
               });
           }
         });
-        this.oldSelectedItem = this.selectedItem;
       },
     },
   };
@@ -132,10 +147,14 @@
   }
 
   .status-box {
-    background-color: gray;
+    background-color: #90A4AE;
     width: 200px;
     height: 300px;
     margin: 25px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
   }
 
   .circle {
@@ -145,18 +164,49 @@
   }
 
   .color-green {
-    background-color: green;
+    background-color: #4CAF50;
   }
 
   .color-blue {
-    background-color: blue;
+    background-color: #3F51B5;
   }
 
   .color-red {
-    background-color: red;
+    background-color: #F44336;
   }
 
   .color-white {
     background-color: white;
+  }
+
+  .info-text {
+    font-size: 90px;
+    margin: 0;
+  }
+
+  .plus {
+    font-size: 150px;
+    margin: 0;
+    font-weight: 700;
+  }
+
+  .orgSel {
+    width: 80%;
+  }
+
+  .topsel {
+    width: 250px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 35px;
+  }
+
+  .menu {
+    width: 50%;
+    margin: 0 auto;
+    min-width: 800px;
   }
 </style>
