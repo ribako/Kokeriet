@@ -272,6 +272,7 @@
           });
         });
       },
+      // Deprecated?
       getHierarchyv2() {
         for (let i = 1; i < 6; i += 1) {
           this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
