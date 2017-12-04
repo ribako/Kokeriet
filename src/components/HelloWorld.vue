@@ -67,20 +67,6 @@
           0,
           100,
         ],
-        width: '100%',
-        height: 8,
-        dotSize: 16,
-        bgStyle: {
-          backgroundColor: '#fff',
-          boxShadow: 'inset 0.5px 0.5px 3px 1px rgba(0,0,0,.36)',
-        },
-        tooltipStyle: {
-          backgroundColor: '#666',
-          borderColor: '#666',
-        },
-        processStyle: {
-          backgroundColor: '#999',
-        },
         datacollection: {},
         options: {
           scales: {
@@ -223,8 +209,8 @@
             chartInstance.scales['y-axis-0'],
             chartInstance.chart.height,
             '#0016bf',
-            '#00bf0a',
             '#bf0400',
+            '#00bf0a',
             this.value[1],
             this.value[0],
           );
