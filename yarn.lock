@@ -4931,6 +4931,10 @@ vue-router@^3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/vue-router/-/vue-router-3.0.1.tgz#d9b05ad9c7420ba0f626d6500d693e60092cc1e9"
 
+vue-select@Lilleengen/vue-select:
+  version "2.5.0"
+  resolved "https://codeload.github.com/Lilleengen/vue-select/tar.gz/e5693b6b5fb38b0c64561b9c9f48a4792cc7bcdf"
+
 vue-slider-component@^2.4.5:
   version "2.4.5"
   resolved "https://registry.yarnpkg.com/vue-slider-component/-/vue-slider-component-2.4.5.tgz#412395a94cd6a8958b5462a4b604cf2393a46d9b"

@@ -1,18 +1,23 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
-    <div class="menu"><div class="topbar"><div><p>Usage: </p><select class="topsel" v-model="selectedItemUsage">
-      <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
-    </select></div>
-    <div><p>Stock: </p><select class="topsel" v-model="selectedItemStock">
-      <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
-    </select></div></div>
-    <vue-slider :bg-style="{color: '#9C27B0'}" :min="minMaxScale.min" :max="minMaxScale.max" v-model="minMax"></vue-slider></div>
+    <h1>Stock Status</h1>
+    <div class="menu">
+      <div class="topbar">
+        <div>
+          <p>Usage: </p>
+          <v-select :on-change="setItemUsage" label="displayName" :options="stockItems"></v-select>
+        </div>
+        <div>
+          <p>Stock: </p>
+          <v-select :on-change="setItemStock" label="displayName" :options="stockItems"></v-select>
+        </div>
+      </div>
+      <vue-slider :slider-style="{'background-color': '#9C27B0'}" :process-style="{'background-color': '#9C27B0'}" :tooltip-style="{'background-color': '#9C27B0', 'border': '1px solid #9C27B0'}" :min="minMaxScale.min" :max="minMaxScale.max"
+                  v-model="minMax"></vue-slider>
+    </div>
     <div class="status">
       <div class="status-box" v-for="(id, i) in numDivs">
-        <select class="orgSel" v-model="numDivs[i]">
-          <option v-for="org in organizations" :value="org.id">{{org.displayName}}</option>
-        </select>
+        <v-select class="box-sel" :on-change="setOrg(i)" label="displayName" :options="organizations"></v-select>
         <p class="info-text">
           {{ data[id] && avgUse[id] ? Math.round(data[id].rows[0][3] / avgUse[id]) + "m" : "?" }}
         </p>
@@ -29,15 +34,16 @@
 <script>
   import Vue from 'vue';
   import vueSlider from 'vue-slider-component';
+  import vSelect from 'vue-select';
 
   export default {
     name: 'OtherWorld',
     components: {
       vueSlider,
+      vSelect,
     },
     data() {
       return {
-        msg: 'Welcome to Your Other Vue.js App',
         numDivs: [],
         organizations: [],
         stockItems: [],
@@ -60,6 +66,17 @@
       this.getStockData();
     },
     methods: {
+      setOrg(i) {
+        return ((val) => {
+          Vue.set(this.numDivs, i, val.id);
+        });
+      },
+      setItemUsage(val) {
+        this.selectedItemUsage = val;
+      },
+      setItemStock(val) {
+        this.selectedItemStock = val;
+      },
       fetchOrganizations() {
         this.$http.get('https://inf5750.dhis2.org/training/api/organisationUnits?paging=false', {
           headers: {
@@ -82,7 +99,7 @@
         this.numDivs.forEach((id, i) => {
           if (this.selectedItemUsage && this.numDivs[i] && this.numDivs[i] !== 0
             && !this.data[this.numDivs[i]]) {
-            this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItemUsage}`
+            this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItemUsage.id}`
               + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${id}`, {
                 headers: {
                   Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
@@ -101,7 +118,7 @@
         this.numDivs.forEach((id, i) => {
           if (this.selectedItemStock && this.numDivs[i] && this.numDivs[i] !== 0
             && !this.data[this.numDivs[i]]) {
-            this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItemStock}`
+            this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItemStock.id}`
               + `&dimension=pe:LAST_MONTH&dimension=ou:${id}`, {
                 headers: {
                   Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
@@ -204,9 +221,34 @@
     margin-bottom: 35px;
   }
 
+  .topbar .dropdown {
+    width: 350px;
+    height: 36px;
+  }
+
+  .v-select .dropdown-toggle {
+    height: 36px;
+  }
+
   .menu {
     width: 50%;
     margin: 0 auto;
     min-width: 800px;
+  }
+
+  .box-sel {
+    height: 36px;
+    width: 90%;
+    background-color: white;
+    border-radius: 4px;
+  }
+
+  .box-sel .selected-tag {
+    overflow: hidden;
+  }
+
+  .box-sel.open {
+    width: 250%;
+    margin-left: calc(150% + 20px);
   }
 </style>
