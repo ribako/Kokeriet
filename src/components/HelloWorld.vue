@@ -7,6 +7,7 @@
     <select v-model="selectedItem">
       <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
     </select>
+    <v-jstree :data="data" show-checkbox multiple allow-batch whole-row @item-click="itemClick"></v-jstree>
     <input v-model="value[0]" type="number" :disable="this.disabled">
     <input v-model="value[1]" type="number" :disable="this.disabled">
     <vue-slider v-model="value" :min="this.min" :max="this.max" :disabled="this.disabled"></vue-slider>
@@ -16,6 +17,7 @@
 
 <script>
   // import Vue from 'vue';
+  import VJstree from 'vue-jstree';
   import vueSlider from 'vue-slider-component';
   import LineExample from './LineChart.jsx';
 
@@ -48,6 +50,7 @@
     components: {
       LineExample,
       vueSlider,
+      VJstree,
     },
     data() {
       return {
@@ -89,6 +92,81 @@
           },
           responsive: true,
           maintainAspectRatio: false,
+        },
+        data: [
+          {
+            text: 'Same but with checkboxes',
+            children: [
+              {
+                text: 'initially selected',
+                selected: true,
+              },
+              {
+                text: 'custom icon',
+                icon: 'a fa-warning icon-state-danger',
+              },
+              {
+                text: 'initially open',
+                icon: 'fa fa-folder icon-state-default',
+                opened: true,
+                children: [
+                  {
+                    text: 'Another node',
+                  },
+                ],
+              },
+              {
+                text: 'custom icon',
+                icon: 'fa fa-warning icon-state-warning',
+              },
+              {
+                text: 'disabled node',
+                icon: 'fa fa-check icon-state-success',
+                disabled: true,
+              },
+            ],
+          },
+          {
+            text: 'Same but with checkboxes',
+            opened: true,
+            children: [
+              {
+                text: 'initially selected',
+                selected: true,
+              },
+              {
+                text: 'custom icon',
+                icon: 'fa fa-warning icon-state-danger',
+              },
+              {
+                text: 'initially open',
+                icon: 'fa fa-folder icon-state-default',
+                opened: true,
+                children: [
+                  {
+                    text: 'Another node',
+                  },
+                ],
+              },
+              {
+                text: 'custom icon',
+                icon: 'fa fa-warning icon-state-warning',
+              },
+              {
+                text: 'disabled node',
+                icon: 'fa fa-check icon-state-success',
+                disabled: true,
+              },
+            ],
+          },
+          {
+            text: 'And wholerow selection',
+          },
+        ],
+        methods: {
+          itemClick(node) {
+            console.log(`${node.model.text} clicked !`);
+          },
         },
       };
     },
