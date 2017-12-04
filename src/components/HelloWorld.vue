@@ -7,7 +7,7 @@
     <select v-model="selectedItem">
       <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
     </select>
-    <v-jstree :data="data" show-checkbox multiple allow-batch whole-row @item-click="itemClick"></v-jstree>
+    <v-jstree :data="data" show-checkbox whole-row @item-click="itemClick"></v-jstree>
     <input v-model="value[0]" type="number" :disable="this.disabled">
     <input v-model="value[1]" type="number" :disable="this.disabled">
     <vue-slider v-model="value" :min="this.min" :max="this.max" :disabled="this.disabled"></vue-slider>
@@ -16,7 +16,7 @@
 </template>
 
 <script>
-  // import Vue from 'vue';
+  import Vue from 'vue';
   import VJstree from 'vue-jstree';
   import vueSlider from 'vue-slider-component';
   import LineExample from './LineChart.jsx';
@@ -56,6 +56,7 @@
       return {
         msg: 'Welcome to Your Vue.js App',
         organizations: [],
+        organizations2: [],
         stockItems: [],
         stockData: {},
         oldItem: null,
@@ -93,76 +94,7 @@
           responsive: true,
           maintainAspectRatio: false,
         },
-        data: [
-          {
-            text: 'Same but with checkboxes',
-            children: [
-              {
-                text: 'initially selected',
-                selected: true,
-              },
-              {
-                text: 'custom icon',
-                icon: 'a fa-warning icon-state-danger',
-              },
-              {
-                text: 'initially open',
-                icon: 'fa fa-folder icon-state-default',
-                opened: true,
-                children: [
-                  {
-                    text: 'Another node',
-                  },
-                ],
-              },
-              {
-                text: 'custom icon',
-                icon: 'fa fa-warning icon-state-warning',
-              },
-              {
-                text: 'disabled node',
-                icon: 'fa fa-check icon-state-success',
-                disabled: true,
-              },
-            ],
-          },
-          {
-            text: 'Same but with checkboxes',
-            opened: true,
-            children: [
-              {
-                text: 'initially selected',
-                selected: true,
-              },
-              {
-                text: 'custom icon',
-                icon: 'fa fa-warning icon-state-danger',
-              },
-              {
-                text: 'initially open',
-                icon: 'fa fa-folder icon-state-default',
-                opened: true,
-                children: [
-                  {
-                    text: 'Another node',
-                  },
-                ],
-              },
-              {
-                text: 'custom icon',
-                icon: 'fa fa-warning icon-state-warning',
-              },
-              {
-                text: 'disabled node',
-                icon: 'fa fa-check icon-state-success',
-                disabled: true,
-              },
-            ],
-          },
-          {
-            text: 'And wholerow selection',
-          },
-        ],
+        data: [],
         methods: {
           itemClick(node) {
             console.log(`${node.model.text} clicked !`);
@@ -173,6 +105,7 @@
     created() {
       this.fetchOrganizations();
       this.fetchStockItems();
+      this.getHierarchy();
     },
     updated() {
       this.getDataForGraph();
@@ -280,6 +213,7 @@
           this.disabled = false;
           /* eslint-disable */
           const chartInstance = this.$refs.graphElem._data._chart;
+          /* eslint-enable */
           const node = chartInstance.chart.ctx;
           console.log(node);
           const fill = calculateGradientFill(
@@ -294,6 +228,50 @@
           );
           chartInstance.chart.config.data.datasets[0].borderColor = fill;
         }
+      },
+      getHierarchy() {
+        this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
+          headers: {
+            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+          },
+        }).then((response) => {
+          this.organizations2 = response.body.organisationUnits;
+          console.log(this.organizations2);
+          let cnt = 0;
+          this.organizations2.forEach((elem) => {
+            console.log(elem.id);
+            this.data.push(elem);
+            this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elem.id}?fields=children`, {
+              headers: {
+                Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+              },
+            }).then((response2) => {
+              // console.log(response2.body.children);
+              // console.log(this.data[cnt]);
+              Vue.set(this.data[cnt], 'children', []);
+              // this.data[cnt].children = [];
+              this.recurseHierarchy(response2.body.children, this.data[cnt]);
+              cnt += 1;
+            });
+          });
+        });
+      },
+      recurseHierarchy(inputList, inputLevel) {
+        let cnt = 0;
+        inputList.forEach((elem) => {
+          this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elem.id}?fields=id,displayName~rename(text),children~rename(list)`, {
+            headers: {
+              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+            },
+          }).then((response) => {
+            // console.log(response.body);
+            // console.log(inputLevel);
+            inputLevel.children.push(response.body);
+            Vue.set(inputLevel.children[cnt], 'children', []);
+            this.recurseHierarchy(response.body.list, inputLevel.children[cnt]);
+            cnt += 1;
+          });
+        });
       },
     },
   };
