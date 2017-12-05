@@ -1,5 +1,6 @@
 <template>
   <div class="hello">
+    <div id="menu"><a href="#/"><div>Graph</div></a><a href="#/other"><div class="sel">Other ting</div></a></div>
     <h1>Stock Status</h1>
     <div class="menu">
       <div class="topbar">
@@ -12,7 +13,7 @@
           <v-select :on-change="setItemStock" label="displayName" :options="stockItems"></v-select>
         </div>
       </div>
-      <vue-slider tooltip="hover" :disabled="disabled" :slider-style="{'background-color': '#9C27B0'}" :process-style="{'background-color': '#9C27B0'}" :tooltip-style="{'background-color': '#9C27B0', 'border': '1px solid #9C27B0'}" :min="minMaxScale.min" :max="minMaxScale.max"
+      <vue-slider tooltip="hover" :disabled="disabled" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" :min="minMaxScale.min" :max="minMaxScale.max"
                   v-model="minMax"></vue-slider>
     </div>
     <div class="status">
@@ -253,4 +254,28 @@
     width: 250%;
     margin-left: calc(150% + 20px);
   }
+
+  #menu div {
+    border: 1px solid #3F51B5;
+    border-radius: 5px;
+    width: 100px;
+    height: 30px;
+    line-height: 30px;
+    display: inline-block;
+    margin: 0 20px;
+  }
+
+  #menu a {
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+    color: #3F51B5;
+  }
+
+  #menu .sel {
+    color: white;
+    background-color: #3F51B5;
+  }
+
+
 </style>
