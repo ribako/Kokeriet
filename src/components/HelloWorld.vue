@@ -260,7 +260,7 @@
           response.body.organisationUnits.forEach((elem) => {
             Vue.set(elem, 'children', []);
             this.data.push(elem);
-            this.recurseHierarchyv2(elem.id, elem.children);
+            this.recurseHierarchy(elem.id, elem.children);
           });
         });
       },
