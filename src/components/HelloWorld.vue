@@ -15,7 +15,7 @@
       </div>
       <input v-model="value[0]" type="number" :disable="disabled">
       <input v-model="value[1]" type="number" :disable="disabled">
-      <vue-slider :tooltip="hover" :slider-style="{'background-color': '#9C27B0'}" :process-style="{'background-color': '#9C27B0'}" :tooltip-style="{'background-color': '#9C27B0', 'border': '1px solid #9C27B0'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
+      <vue-slider tooltip="hover" :slider-style="{'background-color': '#9C27B0'}" :process-style="{'background-color': '#9C27B0'}" :tooltip-style="{'background-color': '#9C27B0', 'border': '1px solid #9C27B0'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
       <v-jstree :data="data" show-checkbox whole-row @item-click="itemClick"></v-jstree>
     </div>
 
