@@ -25,12 +25,15 @@
 
 <script>
   import Vue from 'vue';
+  import lodash from 'lodash';
+  import VueLodash from 'vue-lodash';
   import VJstree from 'vue-jstree';
   import vueSlider from 'vue-slider-component';
   import vSelect from 'vue-select';
   import Router from 'vue-router';
   import LineExample from './LineChart.jsx';
 
+  Vue.use(VueLodash, lodash);
   function calculateGradientFill(ctx, scale, height, baseColor, gradientColor, gradientColor2, value,
     value2) {
     const yPos = scale.getPixelForValue(value);
@@ -55,6 +58,7 @@
     }
   }
 
+  
   export default {
     name: 'HelloWorld',
     components: {
@@ -111,11 +115,13 @@
     created() {
       this.fetchOrganizations();
       this.fetchStockItems();
+      // this.fetchMinMax();
       this.getMaxLevel(0);
     },
     updated() {
       this.getDataForGraph();
       this.updateMinMax();
+      this.postMinMax(this);
     },
     mounted() {
     },
@@ -265,6 +271,23 @@
           chartInstance.chart.config.data.datasets[0].borderColor = fill;
         }
       },
+      postMinMax: lodash.debounce((v) => {
+        console.log(v.selectedOrg + v.selectedItem);
+        v.$http.post(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
+          min: v.min,
+          max: v.max,
+        }, {
+          headers: {
+            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+            ContentType: 'application/json',
+          },
+        }).then((response) => {
+          console.log(response);
+        }, (response) => {
+          console.log('This went wrong!');
+          console.log(response);
+        });
+      }, 2000),
       getMaxLevel(len, first) {
         this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=${len + 1}&fields=id,displayName~rename(text)&paging=false`, {
           headers: {
