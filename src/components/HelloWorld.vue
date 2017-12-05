@@ -15,7 +15,7 @@
           <input class="numin" v-model="value[1]" type="number" :disable="disabled">
         </div>
       </div>
-      <vue-slider width="1px" tooltip="hover" class="slide" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
+      <vue-slider width="95%" tooltip="hover" class="slide" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
       <div class="toggle" v-bind:class="{active: seen}" v-on:click="seen = !seen">Toggle Tree ▼</div>
       <v-jstree v-if="seen" class="tree-box" :data="data" whole-row @item-click="itemClick"></v-jstree>
     </div>
@@ -150,7 +150,7 @@
         this.seen = !this.seen;
       },
       fetchOrganizations() {
-        this.$http.get('https://inf5750.dhis2.org/training/api/organisationUnits?paging=false', {
+        this.$http.get(`${Vue.config.dhis2url}/api/organisationUnits?paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
@@ -159,7 +159,7 @@
         });
       },
       fetchStockItems() {
-        this.$http.get('https://inf5750.dhis2.org/training/api/dataElements?paging=false', {
+        this.$http.get(`${Vue.config.dhis2url}/api/dataElements?paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
@@ -202,7 +202,7 @@
           }];
           this.oldItem = this.selectedItem;
           this.oldOrg = this.selectedOrg;
-          this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItem}`
+          this.$http.get(`${Vue.config.dhis2url}/api/26/analytics?dimension=dx:${this.selectedItem}`
             + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${this.selectedOrg.id}`, {
               headers: {
                 Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
@@ -264,7 +264,7 @@
         }
       },
       getHierarchy() {
-        this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
+        this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
@@ -277,7 +277,7 @@
         });
       },
       recurseHierarchy(elemId, childBox) {
-        this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
+        this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
@@ -420,6 +420,6 @@
   }
 
   .slide {
-    margin-top: -45px;
+    margin: -45px auto 0 auto;
   }
 </style>
