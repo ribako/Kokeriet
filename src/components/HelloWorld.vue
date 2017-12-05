@@ -204,7 +204,7 @@
           this.oldItem = this.selectedItem;
           this.oldOrg = this.selectedOrg;
           this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItem}`
-            + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${this.selectedOrg}`, {
+            + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${this.selectedOrg.id}`, {
               headers: {
                 Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
               },
