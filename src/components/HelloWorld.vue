@@ -270,7 +270,7 @@
       },
       postMinMax: lodash.debounce((v) => {
         console.log(v.selectedOrg + v.selectedItem);
-        v.$http.post(`https://inf5750.dhis2.org/demo/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
+        v.$http.post(`${Vue.config.dhis2url}/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
           min: v.min,
           max: v.max,
         }, {
@@ -286,7 +286,7 @@
         });
       }, 2000),
       getMaxLevel(len, first) {
-        this.$http.get(`https://inf5750.dhis2.org/demo/api/26/organisationUnits.json?level=${len + 1}&fields=id,displayName~rename(text)&paging=false`, {
+        this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits.json?level=${len + 1}&fields=id,displayName~rename(text)&paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
@@ -307,7 +307,7 @@
       },
       recurseHierarchy(elemId, childBox, level, maxLevel) {
         if (level < maxLevel) {
-          this.$http.get(`https://inf5750.dhis2.org/demo/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
+          this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
             headers: {
               Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
             },
