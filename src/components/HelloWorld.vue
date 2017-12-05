@@ -236,7 +236,6 @@
           const chartInstance = this.$refs.graphElem._data._chart;
           /* eslint-enable */
           const node = chartInstance.chart.ctx;
-          console.log(node);
           const fill = calculateGradientFill(
             node,
             chartInstance.scales['y-axis-0'],
@@ -256,7 +255,6 @@
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
         }).then((response) => {
-          console.log(response.body);
           response.body.organisationUnits.forEach((elem) => {
             Vue.set(elem, 'children', []);
             this.data.push(elem);
@@ -271,7 +269,6 @@
           },
         }).then((response) => {
           for (let i = 1; i < response.body.organisationUnits.length; i += 1) {
-            console.log(response.body.organisationUnits[i]);
             Vue.set(response.body.organisationUnits[i], 'children', []);
             childBox.push(response.body.organisationUnits[i]);
             this.recurseHierarchy(response.body.organisationUnits[i].id,
