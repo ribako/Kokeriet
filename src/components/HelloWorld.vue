@@ -17,10 +17,13 @@
 
 <script>
   import Vue from 'vue';
+  import lodash from 'lodash';
+  import VueLodash from 'vue-lodash';
   import VJstree from 'vue-jstree';
   import vueSlider from 'vue-slider-component';
   import LineExample from './LineChart.jsx';
 
+  Vue.use(VueLodash, lodash);
   function calculateGradientFill(ctx, scale, height, baseColor, gradientColor, gradientColor2, value,
     value2) {
     const yPos = scale.getPixelForValue(value);
@@ -45,6 +48,7 @@
     }
   }
 
+  
   export default {
     name: 'HelloWorld',
     components: {
@@ -100,17 +104,19 @@
     created() {
       this.fetchOrganizations();
       this.fetchStockItems();
-      this.getHierarchy();
+      // this.getHierarchy();
+      // this.fetchMinMax();
     },
     updated() {
       this.getDataForGraph();
       this.updateMinMax();
+      this.postMinMax(this);
     },
     mounted() {
     },
     methods: {
       itemClick(node) {
-        console.log(`${node.model.text} clicked !`);
+        // console.log(`${node.model.text} clicked !`);
         this.selectedOrg = node.model.id;
       },
       fetchOrganizations() {
@@ -214,7 +220,7 @@
           const chartInstance = this.$refs.graphElem._data._chart;
           /* eslint-enable */
           const node = chartInstance.chart.ctx;
-          console.log(node);
+          // console.log(node);
           const fill = calculateGradientFill(
             node,
             chartInstance.scales['y-axis-0'],
@@ -228,6 +234,23 @@
           chartInstance.chart.config.data.datasets[0].borderColor = fill;
         }
       },
+      postMinMax: lodash.debounce((v) => {
+        console.log(v.selectedOrg + v.selectedItem);
+        v.$http.post(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
+          min: v.min,
+          max: v.max,
+        }, {
+          headers: {
+            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+            ContentType: 'application/json',
+          },
+        }).then((response) => {
+          console.log(response);
+        }, (response) => {
+          console.log('This went wrong!');
+          console.log(response);
+        });
+      }, 2000),
       getHierarchy() {
         this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
           headers: {
@@ -235,15 +258,15 @@
           },
         }).then((response) => {
           this.organizations2 = response.body.organisationUnits;
-          console.log(this.organizations2);
+          // console.log(this.organizations2);
           let cnt = 0;
           this.organizations2.forEach((elem) => {
-            console.log(elem.id);
+            // console.log(elem.id);
             this.data.push(elem);
             this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elem.id}?fields=children`, {
               headers: {
-                Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
               },
+              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
             }).then((response2) => {
               // console.log(response2.body.children);
               // console.log(this.data[cnt]);
