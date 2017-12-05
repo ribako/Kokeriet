@@ -12,7 +12,7 @@
           <v-select :on-change="setItemStock" label="displayName" :options="stockItems"></v-select>
         </div>
       </div>
-      <vue-slider :slider-style="{'background-color': '#9C27B0'}" :process-style="{'background-color': '#9C27B0'}" :tooltip-style="{'background-color': '#9C27B0', 'border': '1px solid #9C27B0'}" :min="minMaxScale.min" :max="minMaxScale.max"
+      <vue-slider tooltip="hover" :disabled="disabled" :slider-style="{'background-color': '#9C27B0'}" :process-style="{'background-color': '#9C27B0'}" :tooltip-style="{'background-color': '#9C27B0', 'border': '1px solid #9C27B0'}" :min="minMaxScale.min" :max="minMaxScale.max"
                   v-model="minMax"></vue-slider>
     </div>
     <div class="status">
@@ -51,6 +51,7 @@
         minMaxScale: { min: 0, max: 1 },
         data: {},
         avgUse: {},
+        disabled: true,
         selectedItemUsage: null,
         oldSelectedItemUsage: null,
         selectedItemStock: null,
@@ -78,7 +79,7 @@
         this.selectedItemStock = val;
       },
       fetchOrganizations() {
-        this.$http.get('https://inf5750.dhis2.org/training/api/organisationUnits?paging=false', {
+        this.$http.get(`${Vue.config.dhis2url}/api/organisationUnits?paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
@@ -87,7 +88,7 @@
         });
       },
       fetchStockItems() {
-        this.$http.get('https://inf5750.dhis2.org/training/api/dataElements?paging=false', {
+        this.$http.get(`${Vue.config.dhis2url}/api/dataElements?paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
@@ -99,7 +100,7 @@
         this.numDivs.forEach((id, i) => {
           if (this.selectedItemUsage && this.numDivs[i] && this.numDivs[i] !== 0
             && !this.data[this.numDivs[i]]) {
-            this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItemUsage.id}`
+            this.$http.get(`${Vue.config.dhis2url}/api/26/analytics?dimension=dx:${this.selectedItemUsage.id}`
               + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${id}`, {
                 headers: {
                   Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
@@ -118,12 +119,13 @@
         this.numDivs.forEach((id, i) => {
           if (this.selectedItemStock && this.numDivs[i] && this.numDivs[i] !== 0
             && !this.data[this.numDivs[i]]) {
-            this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItemStock.id}`
+            this.$http.get(`${Vue.config.dhis2url}/api/26/analytics?dimension=dx:${this.selectedItemStock.id}`
               + `&dimension=pe:LAST_MONTH&dimension=ou:${id}`, {
                 headers: {
                   Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
                 },
               }).then((response) => {
+                this.disabled = false;
                 if (response.body.rows[0][3] * 1.25 > this.minMaxScale.max) {
                   this.minMaxScale.max = response.body.rows[0][3] * 1.25;
                 }
