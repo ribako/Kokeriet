@@ -1,16 +1,15 @@
 <template>
   <div class="hello">
-    <div id="menu"><a href="#/"><div>Graph</div></a><a href="#/other"><div class="sel">Other ting</div></a></div>
-    <h1>Stock Status</h1>
+    <div id="menu"><a href="#/"><div>Graph</div></a><a href="#/other"><div class="sel">Stock Status</div></a></div>
     <div class="menu">
       <div class="topbar">
         <div>
           <p>Usage: </p>
-          <v-select :on-change="setItemUsage" label="displayName" :options="stockItems"></v-select>
+          <v-select :on-change="setItemUsage" label="displayName" :options="$root.$data.stockItems"></v-select>
         </div>
         <div>
           <p>Stock: </p>
-          <v-select :on-change="setItemStock" label="displayName" :options="stockItems"></v-select>
+          <v-select :on-change="setItemStock" label="displayName" :options="$root.$data.stockItems"></v-select>
         </div>
       </div>
       <vue-slider tooltip="hover" :disabled="disabled" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" :min="minMaxScale.min" :max="minMaxScale.max"
@@ -18,7 +17,7 @@
     </div>
     <div class="status">
       <div class="status-box" v-for="(id, i) in numDivs">
-        <v-select class="box-sel" :on-change="setOrg(i)" label="displayName" :options="organizations"></v-select>
+        <v-select class="box-sel" :on-change="setOrg(i)" label="displayName" :options="$root.$data.organizations"></v-select>
         <p class="info-text">
           {{ data[id] && avgUse[id] ? Math.round(data[id].rows[0][3] / avgUse[id]) + "m" : "?" }}
         </p>
@@ -46,8 +45,6 @@
     data() {
       return {
         numDivs: [],
-        organizations: [],
-        stockItems: [],
         minMax: [0, 0],
         minMaxScale: { min: 0, max: 1 },
         data: {},
@@ -58,10 +55,6 @@
         selectedItemStock: null,
         oldSelectedItemStock: null,
       };
-    },
-    created() {
-      this.fetchOrganizations();
-      this.fetchStockItems();
     },
     updated() {
       this.getUsageData();
@@ -78,15 +71,6 @@
       },
       setItemStock(val) {
         this.selectedItemStock = val;
-      },
-      fetchOrganizations() {
-        this.$http.get(`${Vue.config.dhis2url}/api/organisationUnits?paging=false`, {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          this.organizations = response.body.organisationUnits;
-        });
       },
       fetchStockItems() {
         this.$http.get(`${Vue.config.dhis2url}/api/dataElements?paging=false`, {
@@ -258,7 +242,7 @@
   #menu div {
     border: 1px solid #3F51B5;
     border-radius: 5px;
-    width: 100px;
+    width: 120px;
     height: 30px;
     line-height: 30px;
     display: inline-block;

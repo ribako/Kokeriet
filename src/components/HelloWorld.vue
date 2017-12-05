@@ -1,23 +1,24 @@
 <template>
   <div class="hello">
-    <div id="menu"><a href="#/"><div class="sel">Graph</div></a><a href="#/other"><div>Other ting</div></a></div>
-    <h1>{{ msg }}</h1>
+    <div id="menu"><a href="#/"><div class="sel">Graph</div></a><a href="#/other"><div>Stock Status</div></a></div>
     <div class="menu">
       <div class="topbar">
         <div>
           <p>Organization: </p>
-          <v-select :on-change="setOrg" :value.sync="this.selectedOrg" label="displayName" :options="organizations"></v-select>
-          <input class="numin" v-model="value[0]" type="number" :disable="disabled">
+          <v-select :on-change="setOrg" :value.sync="this.selectedOrg" label="displayName" :options="$root.$data.organizations"></v-select>
+          <div class="toggle" v-bind:class="{active: seen}" v-on:click="seen = !seen">Toggle Tree ▼</div>
         </div>
         <div>
           <p>Stock item: </p>
-          <v-select :on-change="setStockItem" label="displayName" :options="stockItems"></v-select>
-          <input class="numin" v-model="value[1]" type="number" :disable="disabled">
+          <v-select :on-change="setStockItem" label="displayName" :options="$root.$data.stockItems"></v-select>
+          <div class="things">
+            <input class="numin" v-model="value[0]" type="number" :disabled="disabled">
+            <input class="numin" v-model="value[1]" type="number" :disabled="disabled">
+          </div>
         </div>
       </div>
       <vue-slider width="95%" tooltip="hover" class="slide" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
-      <div class="toggle" v-bind:class="{active: seen}" v-on:click="seen = !seen">Toggle Tree ▼</div>
-      <v-jstree v-if="seen" class="tree-box" :data="data" whole-row @item-click="itemClick"></v-jstree>
+      <v-jstree v-if="seen" class="tree-box" :data="$root.$data.data" whole-row @item-click="itemClick"></v-jstree>
     </div>
     <line-example id="gE" ref="graphElem" :chart-data="datacollection" :options="options"></line-example>
   </div>
@@ -58,7 +59,7 @@
     }
   }
 
-  
+
   export default {
     name: 'HelloWorld',
     components: {
@@ -69,9 +70,6 @@
     },
     data() {
       return {
-        msg: 'Welcome to Your Vue.js App',
-        organizations: [],
-        stockItems: [],
         stockData: {},
         oldItem: null,
         oldOrg: null,
@@ -109,28 +107,14 @@
           responsive: true,
           maintainAspectRatio: false,
         },
-        data: [],
       };
-    },
-    created() {
-      this.fetchOrganizations();
-      this.fetchStockItems();
-      // this.fetchMinMax();
-      this.getMaxLevel(0);
     },
     updated() {
       this.getDataForGraph();
       this.updateMinMax();
       this.postMinMax(this);
     },
-    mounted() {
-    },
     methods: {
-      go(path) {
-        return (() => {
-          Router.push({ name: path });
-        });
-      },
       setOrg(val) {
         this.selectedOrg = val;
         this.setTreeSelected(this.data, val.id);
@@ -150,30 +134,11 @@
         });
       },
       itemClick(node) {
-        console.log(`${node.model.text} clicked !`);
         this.selectedOrg = {
           id: node.model.id,
           displayName: node.model.text,
         };
         this.seen = !this.seen;
-      },
-      fetchOrganizations() {
-        this.$http.get(`${Vue.config.dhis2url}/api/organisationUnits?paging=false`, {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          this.organizations = response.body.organisationUnits;
-        });
-      },
-      fetchStockItems() {
-        this.$http.get(`${Vue.config.dhis2url}/api/dataElements?paging=false`, {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          this.stockItems = response.body.dataElements;
-        });
       },
       getDataForGraph() {
         if (this.selectedItem && this.selectedOrg && (this.selectedItem !== this.oldItem
@@ -272,8 +237,7 @@
         }
       },
       postMinMax: lodash.debounce((v) => {
-        console.log(v.selectedOrg + v.selectedItem);
-        v.$http.post(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
+        v.$http.post(`${Vue.config.dhis2url}/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
           min: v.min,
           max: v.max,
         }, {
@@ -288,43 +252,6 @@
           console.log(response);
         });
       }, 2000),
-      getMaxLevel(len, first) {
-        this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=${len + 1}&fields=id,displayName~rename(text)&paging=false`, {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          if (response.body.organisationUnits.length === 0) {
-            this.getHierarchy(len, first);
-          } else {
-            this.getMaxLevel(len + 1, first || response.body);
-          }
-        });
-      },
-      getHierarchy(maxLevel, first) {
-        console.log(maxLevel);
-        first.organisationUnits.forEach((elem) => {
-          Vue.set(elem, 'children', []);
-          this.data.push(elem);
-          this.recurseHierarchy(elem.id, elem.children, 1, maxLevel);
-        });
-      },
-      recurseHierarchy(elemId, childBox, level, maxLevel) {
-        if (level < maxLevel) {
-          this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
-            headers: {
-              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-            },
-          }).then((response) => {
-            for (let i = 1; i < response.body.organisationUnits.length; i += 1) {
-              Vue.set(response.body.organisationUnits[i], 'children', []);
-              childBox.push(response.body.organisationUnits[i]);
-              this.recurseHierarchy(response.body.organisationUnits[i].id,
-                response.body.organisationUnits[i].children, level + 1, maxLevel);
-            }
-          });
-        }
-      },
     },
   };
 </script>
@@ -356,6 +283,8 @@
     z-index: 99;
     height: 500px;
     overflow-y: scroll;
+    margin-top: -20px;
+    margin-left: 20px;
   }
 
 
@@ -407,7 +336,7 @@
   #menu div {
     border: 1px solid #3F51B5;
     border-radius: 5px;
-    width: 100px;
+    width: 120px;
     height: 30px;
     line-height: 30px;
     display: inline-block;
@@ -429,11 +358,11 @@
   .toggle {
     border: 1px solid #3F51B5;
     border-radius: 5px;
-    width: 120px;
-    height: 30px;
+    width: 350px;
+    height: 32px;
     line-height: 30px;
     display: inline-block;
-    margin: 0 20px;
+    margin: 25.25px 0 0 0;
     color: #3F51B5;
     cursor: pointer;
   }
@@ -444,7 +373,7 @@
   }
 
   .numin {
-    width: 100%;
+    width: calc(50% - 4px);
     padding: 12px 20px;
     margin: 25px 0;
     display: inline-block;
@@ -456,5 +385,9 @@
 
   .slide {
     margin: -45px auto 0 auto;
+  }
+
+  .things {
+    width: 350px;
   }
 </style>
