@@ -25,12 +25,15 @@
 
 <script>
   import Vue from 'vue';
+  import lodash from 'lodash';
+  import VueLodash from 'vue-lodash';
   import VJstree from 'vue-jstree';
   import vueSlider from 'vue-slider-component';
   import vSelect from 'vue-select';
   import Router from 'vue-router';
   import LineExample from './LineChart.jsx';
 
+  Vue.use(VueLodash, lodash);
   function calculateGradientFill(ctx, scale, height, baseColor, gradientColor, gradientColor2, value,
     value2) {
     const yPos = scale.getPixelForValue(value);
@@ -55,6 +58,7 @@
     }
   }
 
+  
   export default {
     name: 'HelloWorld',
     components: {
@@ -111,10 +115,13 @@
     created() {
       this.fetchOrganizations();
       this.fetchStockItems();
+      // this.fetchMinMax();
+      this.getMaxLevel(0);
     },
     updated() {
       this.getDataForGraph();
       this.updateMinMax();
+      this.postMinMax(this);
     },
     mounted() {
     },
@@ -130,6 +137,7 @@
       },
       setStockItem(val) {
         this.selectedItem = val.id;
+        this.getDataForGraph();
       },
       setTreeSelected(data, id) {
         data.forEach((elem) => {
@@ -263,32 +271,59 @@
           chartInstance.chart.config.data.datasets[0].borderColor = fill;
         }
       },
-      getHierarchy() {
-        this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false`, {
+      postMinMax: lodash.debounce((v) => {
+        console.log(v.selectedOrg + v.selectedItem);
+        v.$http.post(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
+          min: v.min,
+          max: v.max,
+        }, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+            ContentType: 'application/json',
           },
         }).then((response) => {
-          response.body.organisationUnits.forEach((elem) => {
-            Vue.set(elem, 'children', []);
-            this.data.push(elem);
-            this.recurseHierarchy(elem.id, elem.children);
-          });
+          console.log(response);
+        }, (response) => {
+          console.log('This went wrong!');
+          console.log(response);
         });
-      },
-      recurseHierarchy(elemId, childBox) {
-        this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
+      }, 2000),
+      getMaxLevel(len, first) {
+        this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=${len + 1}&fields=id,displayName~rename(text)&paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
         }).then((response) => {
-          for (let i = 1; i < response.body.organisationUnits.length; i += 1) {
-            Vue.set(response.body.organisationUnits[i], 'children', []);
-            childBox.push(response.body.organisationUnits[i]);
-            this.recurseHierarchy(response.body.organisationUnits[i].id,
-              response.body.organisationUnits[i].children);
+          if (response.body.organisationUnits.length === 0) {
+            this.getHierarchy(len, first);
+          } else {
+            this.getMaxLevel(len + 1, first || response.body);
           }
         });
+      },
+      getHierarchy(maxLevel, first) {
+        console.log(maxLevel);
+        first.organisationUnits.forEach((elem) => {
+          Vue.set(elem, 'children', []);
+          this.data.push(elem);
+          this.recurseHierarchy(elem.id, elem.children, 1, maxLevel);
+        });
+      },
+      recurseHierarchy(elemId, childBox, level, maxLevel) {
+        if (level < maxLevel) {
+          this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
+            headers: {
+              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+            },
+          }).then((response) => {
+            for (let i = 1; i < response.body.organisationUnits.length; i += 1) {
+              Vue.set(response.body.organisationUnits[i], 'children', []);
+              childBox.push(response.body.organisationUnits[i]);
+              this.recurseHierarchy(response.body.organisationUnits[i].id,
+                response.body.organisationUnits[i].children, level + 1, maxLevel);
+            }
+          });
+        }
       },
     },
   };
