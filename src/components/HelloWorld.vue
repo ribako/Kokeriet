@@ -6,7 +6,7 @@
       <div class="topbar">
         <div>
           <p>Organization: </p>
-          <v-select :on-change="setOrg" label="displayName" :options="organizations"></v-select>
+          <v-select :on-change="setOrg" :value.sync="this.selectedOrg" label="displayName" :options="organizations"></v-select>
         </div>
         <div>
           <p>Stock item: </p>
@@ -17,7 +17,7 @@
       <input v-model="value[1]" type="number" :disable="disabled">
       <vue-slider tooltip="hover" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
       <button v-on:click="seen = !seen">Toggle Tree</button>
-      <v-jstree v-if="seen" class="tree-box" :data="data" show-checkbox whole-row @item-click="itemClick"></v-jstree>
+      <v-jstree v-if="seen" class="tree-box" :data="data" whole-row @item-click="itemClick"></v-jstree>
     </div>
     <line-example id="gE" ref="graphElem" :chart-data="datacollection" :options="options"></line-example>
   </div>
@@ -126,14 +126,29 @@
         });
       },
       setOrg(val) {
-        this.selectedOrg = val.id;
+        this.selectedOrg = val;
+        this.setTreeSelected(this.data, val.id);
       },
       setStockItem(val) {
         this.selectedItem = val.id;
       },
+      setTreeSelected(data, id) {
+        data.forEach((elem) => {
+          if (elem.id === id) {
+            Vue.set(elem, 'selected', true);
+          } else {
+            Vue.set(elem, 'selected', false);
+          }
+          this.setTreeSelected(elem.children, id);
+        });
+      },
       itemClick(node) {
         console.log(`${node.model.text} clicked !`);
-        this.selectedOrg = node.model.id;
+        this.selectedOrg = {
+          id: node.model.id,
+          displayName: node.model.text,
+        };
+        this.seen = !this.seen;
       },
       fetchOrganizations() {
         this.$http.get('https://inf5750.dhis2.org/training/api/organisationUnits?paging=false', {
