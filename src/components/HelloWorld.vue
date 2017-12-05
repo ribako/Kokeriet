@@ -111,7 +111,7 @@
     created() {
       this.fetchOrganizations();
       this.fetchStockItems();
-      this.getHierarchyv2();
+      this.getHierarchy();
     },
     updated() {
       this.getDataForGraph();
@@ -251,48 +251,6 @@
         }
       },
       getHierarchy() {
-        this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false`, {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          this.organizations2 = response.body.organisationUnits;
-          console.log(this.organizations2);
-          let cnt = 0;
-          this.organizations2.forEach((elem) => {
-            console.log(elem.id);
-            this.data.push(elem);
-            this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits/${elem.id}?fields=children`, {
-              headers: {
-                Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-              },
-            }).then((response2) => {
-              // console.log(response2.body.children);
-              // console.log(this.data[cnt]);
-              Vue.set(this.data[cnt], 'children', []);
-              // this.data[cnt].children = [];
-              this.recurseHierarchy(response2.body.children, this.data[cnt]);
-              cnt += 1;
-            });
-          });
-        });
-      },
-      recurseHierarchy(inputList, inputLevel) {
-        let cnt = 0;
-        inputList.forEach((elem) => {
-          this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits/${elem.id}?fields=id,displayName~rename(text),children~rename(list)`, {
-            headers: {
-              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-            },
-          }).then((response) => {
-            inputLevel.children.push(response.body);
-            Vue.set(inputLevel.children[cnt], 'children', []);
-            this.recurseHierarchy(response.body.list, inputLevel.children[cnt]);
-            cnt += 1;
-          });
-        });
-      },
-      getHierarchyv2() {
         this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
@@ -306,7 +264,7 @@
           });
         });
       },
-      recurseHierarchyv2(elemId, childBox) {
+      recurseHierarchy(elemId, childBox) {
         this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
