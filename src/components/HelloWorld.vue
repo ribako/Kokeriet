@@ -111,6 +111,7 @@
     created() {
       this.fetchOrganizations();
       this.fetchStockItems();
+      this.getMaxLevel(0);
     },
     updated() {
       this.getDataForGraph();
@@ -130,6 +131,7 @@
       },
       setStockItem(val) {
         this.selectedItem = val.id;
+        this.getDataForGraph();
       },
       setTreeSelected(data, id) {
         data.forEach((elem) => {
@@ -263,32 +265,42 @@
           chartInstance.chart.config.data.datasets[0].borderColor = fill;
         }
       },
-      getHierarchy() {
-        this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
+      getMaxLevel(len, first) {
+        this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=${len + 1}&fields=id,displayName~rename(text)&paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
         }).then((response) => {
-          response.body.organisationUnits.forEach((elem) => {
-            Vue.set(elem, 'children', []);
-            this.data.push(elem);
-            this.recurseHierarchy(elem.id, elem.children);
-          });
-        });
-      },
-      recurseHierarchy(elemId, childBox) {
-        this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          for (let i = 1; i < response.body.organisationUnits.length; i += 1) {
-            Vue.set(response.body.organisationUnits[i], 'children', []);
-            childBox.push(response.body.organisationUnits[i]);
-            this.recurseHierarchy(response.body.organisationUnits[i].id,
-              response.body.organisationUnits[i].children);
+          if (response.body.organisationUnits.length === 0) {
+            this.getHierarchy(len, first);
+          } else {
+            this.getMaxLevel(len + 1, first || response.body);
           }
         });
+      },
+      getHierarchy(maxLevel, first) {
+        console.log(maxLevel);
+        first.organisationUnits.forEach((elem) => {
+          Vue.set(elem, 'children', []);
+          this.data.push(elem);
+          this.recurseHierarchy(elem.id, elem.children, 1, maxLevel);
+        });
+      },
+      recurseHierarchy(elemId, childBox, level, maxLevel) {
+        if (level < maxLevel) {
+          this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
+            headers: {
+              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+            },
+          }).then((response) => {
+            for (let i = 1; i < response.body.organisationUnits.length; i += 1) {
+              Vue.set(response.body.organisationUnits[i], 'children', []);
+              childBox.push(response.body.organisationUnits[i]);
+              this.recurseHierarchy(response.body.organisationUnits[i].id,
+                response.body.organisationUnits[i].children, level + 1, maxLevel);
+            }
+          });
+        }
       },
     },
   };
