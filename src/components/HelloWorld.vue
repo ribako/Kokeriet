@@ -53,7 +53,6 @@
 
       return grd;
     } catch (e) {
-      console.warn('ConfigError: Chart.Bands.js had a problem applying one or more colors please check that you have selected valid color strings');
       return baseColor;
     }
   }
@@ -222,7 +221,7 @@
           const chartInstance = this.$refs.graphElem._data._chart;
           /* eslint-enable */
           const node = chartInstance.chart.ctx;
-          const fill = calculateGradientFill(
+          chartInstance.chart.config.data.datasets[0].borderColor = calculateGradientFill(
             node,
             chartInstance.scales['y-axis-0'],
             chartInstance.chart.height,
@@ -232,7 +231,6 @@
             this.value[1],
             this.value[0],
           );
-          chartInstance.chart.config.data.datasets[0].borderColor = fill;
         }
       },
       postMinMax: lodash.debounce((v) => {
