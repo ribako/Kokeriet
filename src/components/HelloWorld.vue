@@ -7,16 +7,16 @@
         <div>
           <p>Organization: </p>
           <v-select :on-change="setOrg" label="displayName" :options="organizations"></v-select>
+          <input class="numin" v-model="value[0]" type="number" :disable="disabled">
         </div>
         <div>
           <p>Stock item: </p>
           <v-select :on-change="setStockItem" label="displayName" :options="stockItems"></v-select>
+          <input class="numin" v-model="value[1]" type="number" :disable="disabled">
         </div>
       </div>
-      <input v-model="value[0]" type="number" :disable="disabled">
-      <input v-model="value[1]" type="number" :disable="disabled">
-      <vue-slider tooltip="hover" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
-      <button v-on:click="seen = !seen">Toggle Tree</button>
+      <vue-slider width="1px" tooltip="hover" class="slide" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
+      <div class="toggle" v-bind:class="{active: seen}" v-on:click="seen = !seen">Toggle Tree ▼</div>
       <v-jstree v-if="seen" class="tree-box" :data="data" show-checkbox whole-row @item-click="itemClick"></v-jstree>
     </div>
     <line-example id="gE" ref="graphElem" :chart-data="datacollection" :options="options"></line-example>
@@ -111,7 +111,6 @@
     created() {
       this.fetchOrganizations();
       this.fetchStockItems();
-      this.getHierarchyv2();
     },
     updated() {
       this.getDataForGraph();
@@ -132,7 +131,6 @@
         this.selectedItem = val.id;
       },
       itemClick(node) {
-        console.log(`${node.model.text} clicked !`);
         this.selectedOrg = node.model.id;
       },
       fetchOrganizations() {
@@ -236,7 +234,6 @@
           const chartInstance = this.$refs.graphElem._data._chart;
           /* eslint-enable */
           const node = chartInstance.chart.ctx;
-          console.log(node);
           const fill = calculateGradientFill(
             node,
             chartInstance.scales['y-axis-0'],
@@ -257,7 +254,6 @@
           },
         }).then((response) => {
           this.organizations2 = response.body.organisationUnits;
-          console.log(this.organizations2);
           let cnt = 0;
           this.organizations2.forEach((elem) => {
             console.log(elem.id);
@@ -267,8 +263,6 @@
                 Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
               },
             }).then((response2) => {
-              // console.log(response2.body.children);
-              // console.log(this.data[cnt]);
               Vue.set(this.data[cnt], 'children', []);
               // this.data[cnt].children = [];
               this.recurseHierarchy(response2.body.children, this.data[cnt]);
@@ -298,7 +292,6 @@
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
         }).then((response) => {
-          console.log(response.body);
           response.body.organisationUnits.forEach((elem) => {
             Vue.set(elem, 'children', []);
             this.data.push(elem);
@@ -313,7 +306,6 @@
           },
         }).then((response) => {
           for (let i = 1; i < response.body.organisationUnits.length; i += 1) {
-            console.log(response.body.organisationUnits[i]);
             Vue.set(response.body.organisationUnits[i], 'children', []);
             childBox.push(response.body.organisationUnits[i]);
             this.recurseHierarchyv2(response.body.organisationUnits[i].id,
@@ -420,5 +412,37 @@
   #menu .sel {
     color: white;
     background-color: #3F51B5;
+  }
+
+  .toggle {
+    border: 1px solid #3F51B5;
+    border-radius: 5px;
+    width: 120px;
+    height: 30px;
+    line-height: 30px;
+    display: inline-block;
+    margin: 0 20px;
+    color: #3F51B5;
+    cursor: pointer;
+  }
+
+  .toggle.active {
+    color: white;
+    background-color: #3F51B5;
+  }
+
+  .numin {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 25px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    height: 35px;
+  }
+
+  .slide {
+    margin-top: -45px;
   }
 </style>
