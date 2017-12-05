@@ -6,7 +6,7 @@
       <div class="topbar">
         <div>
           <p>Organization: </p>
-          <v-select :on-change="setOrg" label="displayName" :options="organizations"></v-select>
+          <v-select :on-change="setOrg" :value.sync="this.selectedOrg" label="displayName" :options="organizations"></v-select>
           <input class="numin" v-model="value[0]" type="number" :disable="disabled">
         </div>
         <div>
@@ -17,7 +17,7 @@
       </div>
       <vue-slider width="1px" tooltip="hover" class="slide" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
       <div class="toggle" v-bind:class="{active: seen}" v-on:click="seen = !seen">Toggle Tree ▼</div>
-      <v-jstree v-if="seen" class="tree-box" :data="data" show-checkbox whole-row @item-click="itemClick"></v-jstree>
+      <v-jstree v-if="seen" class="tree-box" :data="data" whole-row @item-click="itemClick"></v-jstree>
     </div>
     <line-example id="gE" ref="graphElem" :chart-data="datacollection" :options="options"></line-example>
   </div>
@@ -125,13 +125,29 @@
         });
       },
       setOrg(val) {
-        this.selectedOrg = val.id;
+        this.selectedOrg = val;
+        this.setTreeSelected(this.data, val.id);
       },
       setStockItem(val) {
         this.selectedItem = val.id;
       },
+      setTreeSelected(data, id) {
+        data.forEach((elem) => {
+          if (elem.id === id) {
+            Vue.set(elem, 'selected', true);
+          } else {
+            Vue.set(elem, 'selected', false);
+          }
+          this.setTreeSelected(elem.children, id);
+        });
+      },
       itemClick(node) {
-        this.selectedOrg = node.model.id;
+        console.log(`${node.model.text} clicked !`);
+        this.selectedOrg = {
+          id: node.model.id,
+          displayName: node.model.text,
+        };
+        this.seen = !this.seen;
       },
       fetchOrganizations() {
         this.$http.get('https://inf5750.dhis2.org/training/api/organisationUnits?paging=false', {
@@ -187,7 +203,7 @@
           this.oldItem = this.selectedItem;
           this.oldOrg = this.selectedOrg;
           this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItem}`
-            + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${this.selectedOrg}`, {
+            + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${this.selectedOrg.id}`, {
               headers: {
                 Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
               },
@@ -248,45 +264,6 @@
         }
       },
       getHierarchy() {
-        this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false`, {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          this.organizations2 = response.body.organisationUnits;
-          let cnt = 0;
-          this.organizations2.forEach((elem) => {
-            console.log(elem.id);
-            this.data.push(elem);
-            this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits/${elem.id}?fields=children`, {
-              headers: {
-                Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-              },
-            }).then((response2) => {
-              Vue.set(this.data[cnt], 'children', []);
-              // this.data[cnt].children = [];
-              this.recurseHierarchy(response2.body.children, this.data[cnt]);
-              cnt += 1;
-            });
-          });
-        });
-      },
-      recurseHierarchy(inputList, inputLevel) {
-        let cnt = 0;
-        inputList.forEach((elem) => {
-          this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits/${elem.id}?fields=id,displayName~rename(text),children~rename(list)`, {
-            headers: {
-              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-            },
-          }).then((response) => {
-            inputLevel.children.push(response.body);
-            Vue.set(inputLevel.children[cnt], 'children', []);
-            this.recurseHierarchy(response.body.list, inputLevel.children[cnt]);
-            cnt += 1;
-          });
-        });
-      },
-      getHierarchyv2() {
         this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
@@ -295,11 +272,11 @@
           response.body.organisationUnits.forEach((elem) => {
             Vue.set(elem, 'children', []);
             this.data.push(elem);
-            this.recurseHierarchyv2(elem.id, elem.children);
+            this.recurseHierarchy(elem.id, elem.children);
           });
         });
       },
-      recurseHierarchyv2(elemId, childBox) {
+      recurseHierarchy(elemId, childBox) {
         this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
@@ -308,7 +285,7 @@
           for (let i = 1; i < response.body.organisationUnits.length; i += 1) {
             Vue.set(response.body.organisationUnits[i], 'children', []);
             childBox.push(response.body.organisationUnits[i]);
-            this.recurseHierarchyv2(response.body.organisationUnits[i].id,
+            this.recurseHierarchy(response.body.organisationUnits[i].id,
               response.body.organisationUnits[i].children);
           }
         });
