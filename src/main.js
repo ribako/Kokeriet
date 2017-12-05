@@ -8,6 +8,7 @@ import router from './router';
 Vue.config.productionTip = false;
 
 Vue.use(VueResource);
+Vue.config.dhis2url = 'https://inf5750.dhis2.org/training';
 
 /* eslint-disable no-new */
 new Vue({
