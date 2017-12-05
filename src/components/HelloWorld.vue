@@ -31,7 +31,6 @@
   import VJstree from 'vue-jstree';
   import vueSlider from 'vue-slider-component';
   import vSelect from 'vue-select';
-  import Router from 'vue-router';
   import LineExample from './LineChart.jsx';
 
   Vue.use(VueLodash, lodash);
