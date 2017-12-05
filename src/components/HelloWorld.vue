@@ -1,17 +1,24 @@
 <template>
   <div class="hello">
+    <div id="menu"><a href="#/"><div class="sel">Graph</div></a><a href="#/other"><div>Other ting</div></a></div>
     <h1>{{ msg }}</h1>
-    <select v-model="selectedOrg">
-      <option v-for="org in organizations" :value="org.id">{{org.displayName}}</option>
-    </select>
-    <select v-model="selectedItem">
-      <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
-    </select>
-    <button v-on:click="seen = !seen">Toggle Tree</button>
+    <div class="menu">
+      <div class="topbar">
+        <div>
+          <p>Organization: </p>
+          <v-select :on-change="setOrg" label="displayName" :options="organizations"></v-select>
+        </div>
+        <div>
+          <p>Stock item: </p>
+          <v-select :on-change="setStockItem" label="displayName" :options="stockItems"></v-select>
+        </div>
+      </div>
+      <input v-model="value[0]" type="number" :disable="disabled">
+      <input v-model="value[1]" type="number" :disable="disabled">
+      <vue-slider tooltip="hover" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
+      <button v-on:click="seen = !seen">Toggle Tree</button>
       <v-jstree v-if="seen" class="tree-box" :data="data" show-checkbox whole-row @item-click="itemClick"></v-jstree>
-    <input v-model="value[0]" type="number" :disable="this.disabled">
-    <input v-model="value[1]" type="number" :disable="this.disabled">
-    <vue-slider v-model="value" :min="this.min" :max="this.max" :disabled="this.disabled"></vue-slider>
+    </div>
     <line-example id="gE" ref="graphElem" :chart-data="datacollection" :options="options"></line-example>
   </div>
 </template>
@@ -20,6 +27,8 @@
   import Vue from 'vue';
   import VJstree from 'vue-jstree';
   import vueSlider from 'vue-slider-component';
+  import vSelect from 'vue-select';
+  import Router from 'vue-router';
   import LineExample from './LineChart.jsx';
 
   function calculateGradientFill(ctx, scale, height, baseColor, gradientColor, gradientColor2, value,
@@ -52,12 +61,12 @@
       LineExample,
       vueSlider,
       VJstree,
+      vSelect,
     },
     data() {
       return {
         msg: 'Welcome to Your Vue.js App',
         organizations: [],
-        organizations2: [],
         stockItems: [],
         stockData: {},
         oldItem: null,
@@ -111,6 +120,17 @@
     mounted() {
     },
     methods: {
+      go(path) {
+        return (() => {
+          Router.push({ name: path });
+        });
+      },
+      setOrg(val) {
+        this.selectedOrg = val.id;
+      },
+      setStockItem(val) {
+        this.selectedItem = val.id;
+      },
       itemClick(node) {
         console.log(`${node.model.text} clicked !`);
         this.selectedOrg = node.model.id;
@@ -221,9 +241,9 @@
             node,
             chartInstance.scales['y-axis-0'],
             chartInstance.chart.height,
-            '#0016bf',
-            '#bf0400',
-            '#00bf0a',
+            '#3F51B5',
+            '#F44336',
+            '#4CAF50',
             this.value[1],
             this.value[0],
           );
@@ -231,7 +251,7 @@
         }
       },
       getHierarchy() {
-        this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
+        this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
@@ -242,7 +262,7 @@
           this.organizations2.forEach((elem) => {
             console.log(elem.id);
             this.data.push(elem);
-            this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elem.id}?fields=children`, {
+            this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits/${elem.id}?fields=children`, {
               headers: {
                 Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
               },
@@ -260,7 +280,7 @@
       recurseHierarchy(inputList, inputLevel) {
         let cnt = 0;
         inputList.forEach((elem) => {
-          this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elem.id}?fields=id,displayName~rename(text),children~rename(list)`, {
+          this.$http.get(`${Vue.config.dhis2url}/api/26/organisationUnits/${elem.id}?fields=id,displayName~rename(text),children~rename(list)`, {
             headers: {
               Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
             },
@@ -332,5 +352,73 @@
     z-index: 99;
     height: 500px;
     overflow-y: scroll;
+  }
+
+
+  .orgSel {
+    width: 80%;
+  }
+
+  .topsel {
+    width: 250px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 35px;
+  }
+
+  .topbar .dropdown {
+    width: 350px;
+    height: 36px;
+  }
+
+  .v-select .dropdown-toggle {
+    height: 36px;
+  }
+
+  .menu {
+    width: 50%;
+    margin: 0 auto;
+    min-width: 800px;
+  }
+
+  .box-sel {
+    height: 36px;
+    width: 90%;
+    background-color: white;
+    border-radius: 4px;
+  }
+
+  .box-sel .selected-tag {
+    overflow: hidden;
+  }
+
+  .box-sel.open {
+    width: 250%;
+    margin-left: calc(150% + 20px);
+  }
+
+  #menu div {
+    border: 1px solid #3F51B5;
+    border-radius: 5px;
+    width: 100px;
+    height: 30px;
+    line-height: 30px;
+    display: inline-block;
+    margin: 0 20px;
+  }
+
+  #menu a {
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+    color: #3F51B5;
+  }
+
+  #menu .sel {
+    color: white;
+    background-color: #3F51B5;
   }
 </style>
