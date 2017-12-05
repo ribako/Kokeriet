@@ -5123,7 +5123,7 @@ vue-router@^3.0.1:
 
 vue-select@Lilleengen/vue-select:
   version "2.5.0"
-  resolved "https://codeload.github.com/Lilleengen/vue-select/tar.gz/e5693b6b5fb38b0c64561b9c9f48a4792cc7bcdf"
+  resolved "https://codeload.github.com/Lilleengen/vue-select/tar.gz/109966d518a5af7df9cfb3425ac5a26bf17e43d5"
 
 vue-slider-component@^2.4.5:
   version "2.4.5"
