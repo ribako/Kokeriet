@@ -274,7 +274,7 @@
             console.log(response.body.organisationUnits[i]);
             Vue.set(response.body.organisationUnits[i], 'children', []);
             childBox.push(response.body.organisationUnits[i]);
-            this.recurseHierarchyv2(response.body.organisationUnits[i].id,
+            this.recurseHierarchy(response.body.organisationUnits[i].id,
               response.body.organisationUnits[i].children);
           }
         });
