@@ -7,7 +7,8 @@
     <select v-model="selectedItem">
       <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
     </select>
-    <v-jstree :data="data" show-checkbox whole-row @item-click="itemClick"></v-jstree>
+    <button v-on:click="seen = !seen">Toggle Tree</button>
+      <v-jstree v-if="seen" class="tree-box" :data="data" show-checkbox whole-row @item-click="itemClick"></v-jstree>
     <input v-model="value[0]" type="number" :disable="this.disabled">
     <input v-model="value[1]" type="number" :disable="this.disabled">
     <vue-slider v-model="value" :min="this.min" :max="this.max" :disabled="this.disabled"></vue-slider>
@@ -65,6 +66,7 @@
         selectedItem: null,
         selectedOrg: null,
         disabled: true,
+        seen: false,
         min: 0,
         max: 100,
         value: [
@@ -100,7 +102,7 @@
     created() {
       this.fetchOrganizations();
       this.fetchStockItems();
-      this.getHierarchy();
+      this.getHierarchyv2();
     },
     updated() {
       this.getDataForGraph();
@@ -263,8 +265,6 @@
               Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
             },
           }).then((response) => {
-            // console.log(response.body);
-            // console.log(inputLevel);
             inputLevel.children.push(response.body);
             Vue.set(inputLevel.children[cnt], 'children', []);
             this.recurseHierarchy(response.body.list, inputLevel.children[cnt]);
@@ -272,17 +272,34 @@
           });
         });
       },
-      // Deprecated?
       getHierarchyv2() {
-        for (let i = 1; i < 6; i += 1) {
-          this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
-            headers: {
-              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-            },
-          }).then((response) => {
-            this.organizations2 = response.body.organisationUnits;
+        this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
+          headers: {
+            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+          },
+        }).then((response) => {
+          console.log(response.body);
+          response.body.organisationUnits.forEach((elem) => {
+            Vue.set(elem, 'children', []);
+            this.data.push(elem);
+            this.recurseHierarchyv2(elem.id, elem.children);
           });
-        }
+        });
+      },
+      recurseHierarchyv2(elemId, childBox) {
+        this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
+          headers: {
+            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+          },
+        }).then((response) => {
+          for (let i = 1; i < response.body.organisationUnits.length; i += 1) {
+            console.log(response.body.organisationUnits[i]);
+            Vue.set(response.body.organisationUnits[i], 'children', []);
+            childBox.push(response.body.organisationUnits[i]);
+            this.recurseHierarchyv2(response.body.organisationUnits[i].id,
+              response.body.organisationUnits[i].children);
+          }
+        });
       },
     },
   };
@@ -306,5 +323,14 @@
 
   a {
     color: #42b983;
+  }
+
+  .tree-box {
+    position: absolute;
+    background-color: white;
+    width: 750px;
+    z-index: 99;
+    height: 500px;
+    overflow-y: scroll;
   }
 </style>

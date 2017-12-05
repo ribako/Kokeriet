@@ -4925,6 +4925,10 @@ vue-loader@^13.3.0:
     vue-style-loader "^3.0.0"
     vue-template-es2015-compiler "^1.6.0"
 
+vue-popover@^1.6.0:
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/vue-popover/-/vue-popover-1.6.0.tgz#d843cbd3a4e118651dbc2fecc115deee1285ef39"
+
 vue-resource@^1.3.4:
   version "1.3.4"
   resolved "https://registry.yarnpkg.com/vue-resource/-/vue-resource-1.3.4.tgz#9fc0bdf6a2f5cab430129fc99d347b3deae7b099"
