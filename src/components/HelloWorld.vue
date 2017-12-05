@@ -53,12 +53,11 @@
 
       return grd;
     } catch (e) {
-      console.warn('ConfigError: Chart.Bands.js had a problem applying one or more colors please check that you have selected valid color strings');
       return baseColor;
     }
   }
 
-  
+
   export default {
     name: 'HelloWorld',
     components: {
@@ -150,7 +149,6 @@
         });
       },
       itemClick(node) {
-        console.log(`${node.model.text} clicked !`);
         this.selectedOrg = {
           id: node.model.id,
           displayName: node.model.text,
@@ -258,7 +256,7 @@
           const chartInstance = this.$refs.graphElem._data._chart;
           /* eslint-enable */
           const node = chartInstance.chart.ctx;
-          const fill = calculateGradientFill(
+          chartInstance.chart.config.data.datasets[0].borderColor = calculateGradientFill(
             node,
             chartInstance.scales['y-axis-0'],
             chartInstance.chart.height,
@@ -268,12 +266,11 @@
             this.value[1],
             this.value[0],
           );
-          chartInstance.chart.config.data.datasets[0].borderColor = fill;
         }
       },
       postMinMax: lodash.debounce((v) => {
         console.log(v.selectedOrg + v.selectedItem);
-        v.$http.post(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
+        v.$http.post(`https://inf5750.dhis2.org/demo/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
           min: v.min,
           max: v.max,
         }, {
@@ -289,7 +286,7 @@
         });
       }, 2000),
       getMaxLevel(len, first) {
-        this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=${len + 1}&fields=id,displayName~rename(text)&paging=false`, {
+        this.$http.get(`https://inf5750.dhis2.org/demo/api/26/organisationUnits.json?level=${len + 1}&fields=id,displayName~rename(text)&paging=false`, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
           },
@@ -302,7 +299,6 @@
         });
       },
       getHierarchy(maxLevel, first) {
-        console.log(maxLevel);
         first.organisationUnits.forEach((elem) => {
           Vue.set(elem, 'children', []);
           this.data.push(elem);
@@ -311,7 +307,7 @@
       },
       recurseHierarchy(elemId, childBox, level, maxLevel) {
         if (level < maxLevel) {
-          this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
+          this.$http.get(`https://inf5750.dhis2.org/demo/api/26/organisationUnits/${elemId}?includeChildren&fields=displayName~rename(text),id&paging=false`, {
             headers: {
               Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
             },
