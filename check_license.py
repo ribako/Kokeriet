@@ -18,5 +18,5 @@ for key in matches:
         licenses[key] = 0
     licenses[key] += 1
 
-for line in licenses:
-    print(line)
+for key in licenses:
+    print('{}: {}'.format(key, licenses[key]))
