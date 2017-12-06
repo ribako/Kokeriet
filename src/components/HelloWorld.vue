@@ -105,12 +105,12 @@
       this.fetchOrganizations();
       this.fetchStockItems();
       // this.getHierarchy();
-      // this.fetchMinMax();
+      // this.fetchThreshold();
     },
     updated() {
       this.getDataForGraph();
       this.updateMinMax();
-      this.postMinMax(this);
+      this.postThreshold(this);
     },
     mounted() {
     },
@@ -140,6 +140,7 @@
       getDataForGraph() {
         if (this.selectedItem && this.selectedOrg && (this.selectedItem !== this.oldItem
             || this.selectedOrg !== this.oldOrg)) {
+          this.fetchThreshold();
           const labels = [];
           const datasets = [{
             label: 'Data',
@@ -234,11 +235,10 @@
           chartInstance.chart.config.data.datasets[0].borderColor = fill;
         }
       },
-      postMinMax: lodash.debounce((v) => {
-        console.log(v.selectedOrg + v.selectedItem);
-        v.$http.post(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
-          min: v.min,
-          max: v.max,
+      postThreshold: lodash.debounce((v) => {
+        v.$http.put(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
+          min: v.value[0],
+          max: v.value[1],
         }, {
           headers: {
             Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
@@ -247,10 +247,33 @@
         }).then((response) => {
           console.log(response);
         }, (response) => {
-          console.log('This went wrong!');
-          console.log(response);
+          if (response.status === 404) { // in case there is no previous entry
+            v.$http.post(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
+              min: v.value[0],
+              max: v.value[1],
+            }, {
+              headers: {
+                Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+                ContentType: 'application/json',
+              },
+            }).then((response1) => {
+              console.log(response1);
+            });
+          }
         });
       }, 2000),
+      fetchThreshold() {
+        this.$http.get(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${this.selectedOrg}${this.selectedItem}`, {
+          headers: {
+            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+          },
+        }).then((response) => {
+          this.value[0] = response.body.min;
+          this.value[1] = response.body.max;
+          this.updateMinMax();
+          Vue.set(this, this.value, this.min, this.max);
+        });
+      },
       getHierarchy() {
         this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
           headers: {
