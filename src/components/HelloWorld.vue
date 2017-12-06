@@ -5,7 +5,7 @@
       <div class="topbar">
         <div>
           <p>Organization: </p>
-          <v-select :on-change="setOrg" :value.sync="this.selectedOrg" label="displayName" :options="$root.$data.organizations"></v-select>
+          <v-select :on-change="setOrg" :value.sync="selectedOrg" label="displayName" :options="$root.$data.organizations"></v-select>
           <div class="toggle" v-bind:class="{active: seen}" v-on:click="seen = !seen">Toggle Tree ▼</div>
         </div>
         <div>
@@ -80,7 +80,7 @@
         max: 100,
         value: [
           0,
-          100,
+          0,
         ],
         datacollection: {},
         options: {
