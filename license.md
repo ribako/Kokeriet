@@ -1,5 +1,15 @@
 The MIT License (MIT)
 =====================
+WWWWWW||WWWWWW 
+ W W W||W W W 
+      ||    
+    ( OO )__________
+     /  |           \
+    /o o|    MIT     \
+    \___/||_||__||_|| *
+         || ||  || ||
+        _||_|| _||_||
+       (__|__|(__|__| 
 
 Copyright © `2017` `Kokeriet`
 
