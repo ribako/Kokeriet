@@ -1,16 +1,25 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
-    <select v-model="selectedOrg">
-      <option v-for="org in organizations" :value="org.id">{{org.displayName}}</option>
-    </select>
-    <select v-model="selectedItem">
-      <option v-for="item in stockItems" :value="item.id">{{item.displayName}}</option>
-    </select>
-    <v-jstree :data="data" show-checkbox whole-row @item-click="itemClick"></v-jstree>
-    <input v-model="value[0]" type="number" :disable="this.disabled">
-    <input v-model="value[1]" type="number" :disable="this.disabled">
-    <vue-slider v-model="value" :min="this.min" :max="this.max" :disabled="this.disabled"></vue-slider>
+    <div id="menu"><a href="#/"><div class="sel">Graph</div></a><a href="#/other"><div>Stock Status</div></a></div>
+    <div class="menu">
+      <div class="topbar">
+        <div>
+          <p>Organization: </p>
+          <v-select :on-change="setOrg" :value.sync="selectedOrg" label="displayName" :options="$root.$data.organizations"></v-select>
+          <div class="toggle" v-bind:class="{active: seen}" v-on:click="seen = !seen">Toggle Tree ▼</div>
+        </div>
+        <div>
+          <p>Stock item: </p>
+          <v-select :on-change="setStockItem" label="displayName" :options="$root.$data.stockItems"></v-select>
+          <div class="things">
+            <input class="numin" v-model="value[0]" type="number" :disabled="disabled">
+            <input class="numin" v-model="value[1]" type="number" :disabled="disabled">
+          </div>
+        </div>
+      </div>
+      <vue-slider width="95%" tooltip="hover" class="slide" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
+      <v-jstree v-if="seen" class="tree-box" :data="$root.$data.data" whole-row @item-click="itemClick"></v-jstree>
+    </div>
     <line-example id="gE" ref="graphElem" :chart-data="datacollection" :options="options"></line-example>
   </div>
 </template>
@@ -21,6 +30,7 @@
   import VueLodash from 'vue-lodash';
   import VJstree from 'vue-jstree';
   import vueSlider from 'vue-slider-component';
+  import vSelect from 'vue-select';
   import LineExample from './LineChart.jsx';
 
   Vue.use(VueLodash, lodash);
@@ -43,25 +53,21 @@
 
       return grd;
     } catch (e) {
-      console.warn('ConfigError: Chart.Bands.js had a problem applying one or more colors please check that you have selected valid color strings');
       return baseColor;
     }
   }
 
-  
+
   export default {
     name: 'HelloWorld',
     components: {
       LineExample,
       vueSlider,
       VJstree,
+      vSelect,
     },
     data() {
       return {
-        msg: 'Welcome to Your Vue.js App',
-        organizations: [],
-        organizations2: [],
-        stockItems: [],
         stockData: {},
         oldItem: null,
         oldOrg: null,
@@ -69,11 +75,12 @@
         selectedItem: null,
         selectedOrg: null,
         disabled: true,
+        seen: false,
         min: 0,
         max: 100,
         value: [
           0,
-          100,
+          0,
         ],
         datacollection: {},
         options: {
@@ -98,44 +105,38 @@
           responsive: true,
           maintainAspectRatio: false,
         },
-        data: [],
       };
-    },
-    created() {
-      this.fetchOrganizations();
-      this.fetchStockItems();
-      // this.getHierarchy();
-      // this.fetchThreshold();
     },
     updated() {
       this.getDataForGraph();
       this.updateMinMax();
       this.postThreshold(this);
     },
-    mounted() {
-    },
     methods: {
+      setOrg(val) {
+        this.selectedOrg = val;
+        this.setTreeSelected(this.data, val.id);
+      },
+      setStockItem(val) {
+        this.selectedItem = val.id;
+        this.getDataForGraph();
+      },
+      setTreeSelected(data, id) {
+        data.forEach((elem) => {
+          if (elem.id === id) {
+            Vue.set(elem, 'selected', true);
+          } else {
+            Vue.set(elem, 'selected', false);
+          }
+          this.setTreeSelected(elem.children, id);
+        });
+      },
       itemClick(node) {
-        // console.log(`${node.model.text} clicked !`);
-        this.selectedOrg = node.model.id;
-      },
-      fetchOrganizations() {
-        this.$http.get('https://inf5750.dhis2.org/training/api/organisationUnits?paging=false', {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          this.organizations = response.body.organisationUnits;
-        });
-      },
-      fetchStockItems() {
-        this.$http.get('https://inf5750.dhis2.org/training/api/dataElements?paging=false', {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          this.stockItems = response.body.dataElements;
-        });
+        this.selectedOrg = {
+          id: node.model.id,
+          displayName: node.model.text,
+        };
+        this.seen = !this.seen;
       },
       getDataForGraph() {
         if (this.selectedItem && this.selectedOrg && (this.selectedItem !== this.oldItem
@@ -173,8 +174,8 @@
           }];
           this.oldItem = this.selectedItem;
           this.oldOrg = this.selectedOrg;
-          this.$http.get(`https://inf5750.dhis2.org/training/api/26/analytics?dimension=dx:${this.selectedItem}`
-            + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${this.selectedOrg}`, {
+          this.$http.get(`${Vue.config.dhis2url}/api/26/analytics?dimension=dx:${this.selectedItem}`
+            + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${this.selectedOrg.id}`, {
               headers: {
                 Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
               },
@@ -221,22 +222,20 @@
           const chartInstance = this.$refs.graphElem._data._chart;
           /* eslint-enable */
           const node = chartInstance.chart.ctx;
-          // console.log(node);
-          const fill = calculateGradientFill(
+          chartInstance.chart.config.data.datasets[0].borderColor = calculateGradientFill(
             node,
             chartInstance.scales['y-axis-0'],
             chartInstance.chart.height,
-            '#0016bf',
-            '#bf0400',
-            '#00bf0a',
+            '#3F51B5',
+            '#F44336',
+            '#4CAF50',
             this.value[1],
             this.value[0],
           );
-          chartInstance.chart.config.data.datasets[0].borderColor = fill;
         }
       },
       postThreshold: lodash.debounce((v) => {
-        v.$http.put(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
+        v.$http.put(`${Vue.config.dhis2url}/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
           min: v.value[0],
           max: v.value[1],
         }, {
@@ -274,62 +273,6 @@
           Vue.set(this, this.value, this.min, this.max);
         });
       },
-      getHierarchy() {
-        this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          this.organizations2 = response.body.organisationUnits;
-          // console.log(this.organizations2);
-          let cnt = 0;
-          this.organizations2.forEach((elem) => {
-            // console.log(elem.id);
-            this.data.push(elem);
-            this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elem.id}?fields=children`, {
-              headers: {
-              },
-              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-            }).then((response2) => {
-              // console.log(response2.body.children);
-              // console.log(this.data[cnt]);
-              Vue.set(this.data[cnt], 'children', []);
-              // this.data[cnt].children = [];
-              this.recurseHierarchy(response2.body.children, this.data[cnt]);
-              cnt += 1;
-            });
-          });
-        });
-      },
-      recurseHierarchy(inputList, inputLevel) {
-        let cnt = 0;
-        inputList.forEach((elem) => {
-          this.$http.get(`https://inf5750.dhis2.org/training/api/26/organisationUnits/${elem.id}?fields=id,displayName~rename(text),children~rename(list)`, {
-            headers: {
-              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-            },
-          }).then((response) => {
-            // console.log(response.body);
-            // console.log(inputLevel);
-            inputLevel.children.push(response.body);
-            Vue.set(inputLevel.children[cnt], 'children', []);
-            this.recurseHierarchy(response.body.list, inputLevel.children[cnt]);
-            cnt += 1;
-          });
-        });
-      },
-      // Deprecated?
-      getHierarchyv2() {
-        for (let i = 1; i < 6; i += 1) {
-          this.$http.get('https://inf5750.dhis2.org/training/api/26/organisationUnits.json?level=1&fields=id,displayName~rename(text)&paging=false', {
-            headers: {
-              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-            },
-          }).then((response) => {
-            this.organizations2 = response.body.organisationUnits;
-          });
-        }
-      },
     },
   };
 </script>
@@ -352,5 +295,120 @@
 
   a {
     color: #42b983;
+  }
+
+  .tree-box {
+    position: absolute;
+    background-color: white;
+    width: 750px;
+    z-index: 99;
+    height: 500px;
+    overflow-y: scroll;
+    margin-top: -20px;
+    margin-left: 20px;
+  }
+
+
+  .orgSel {
+    width: 80%;
+  }
+
+  .topsel {
+    width: 250px;
+  }
+
+  .topbar {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 35px;
+  }
+
+  .topbar .dropdown {
+    width: 350px;
+    height: 36px;
+  }
+
+  .v-select .dropdown-toggle {
+    height: 36px;
+  }
+
+  .menu {
+    width: 50%;
+    margin: 0 auto;
+    min-width: 800px;
+  }
+
+  .box-sel {
+    height: 36px;
+    width: 90%;
+    background-color: white;
+    border-radius: 4px;
+  }
+
+  .box-sel .selected-tag {
+    overflow: hidden;
+  }
+
+  .box-sel.open {
+    width: 250%;
+    margin-left: calc(150% + 20px);
+  }
+
+  #menu div {
+    border: 1px solid #3F51B5;
+    border-radius: 5px;
+    width: 120px;
+    height: 30px;
+    line-height: 30px;
+    display: inline-block;
+    margin: 0 20px;
+  }
+
+  #menu a {
+    width: 100%;
+    height: 100%;
+    text-decoration: none;
+    color: #3F51B5;
+  }
+
+  #menu .sel {
+    color: white;
+    background-color: #3F51B5;
+  }
+
+  .toggle {
+    border: 1px solid #3F51B5;
+    border-radius: 5px;
+    width: 350px;
+    height: 32px;
+    line-height: 30px;
+    display: inline-block;
+    margin: 25.25px 0 0 0;
+    color: #3F51B5;
+    cursor: pointer;
+  }
+
+  .toggle.active {
+    color: white;
+    background-color: #3F51B5;
+  }
+
+  .numin {
+    width: calc(50% - 4px);
+    padding: 12px 20px;
+    margin: 25px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    height: 35px;
+  }
+
+  .slide {
+    margin: -45px auto 0 auto;
+  }
+
+  .things {
+    width: 350px;
   }
 </style>
