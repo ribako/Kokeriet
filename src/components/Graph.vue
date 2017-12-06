@@ -32,7 +32,7 @@
   import VJstree from 'vue-jstree';
   import vueSlider from 'vue-slider-component';
   import vSelect from 'vue-select';
-  import LineChart from './utils/LineChart.jsx';
+  import LineChart from './LineChart.jsx';
 
   Vue.use(VueLodash, lodash);
 
