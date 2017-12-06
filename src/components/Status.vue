@@ -1,6 +1,6 @@
 <template>
   <div class="hello">
-    <div id="menu"><a href="#/"><div>Graph</div></a><a href="#/other"><div class="sel">Stock Status</div></a></div>
+    <div id="menu"><a href="#/"><div>Graph</div></a><a href="#/status"><div class="sel">Stock Status</div></a></div>
     <div class="menu">
       <div class="topbar">
         <div>
@@ -12,8 +12,9 @@
           <p>Stock item: </p>
           <v-select :on-change="setItemStock" label="displayName" :options="$root.$data.stockItems"></v-select>
           <div class="things">
-            <input class="numin" v-model="minMax[0]" type="number" :disabled="disabled">
-            <input class="numin" v-model="minMax[1]" type="number" :disabled="disabled">
+            <input class="numin" v-bind:class="{small: $root.$data.admin}" v-model="minMax[0]" type="number" :disabled="disabled">
+            <input class="numin" v-bind:class="{small: $root.$data.admin}" v-model="minMax[1]" type="number" :disabled="disabled">
+            <div class="admin" v-if="$root.$data.admin" v-on:click="postAdminThreshold()">Set default</div>
           </div>
         </div>
       </div>
@@ -43,9 +44,14 @@
   import vueSlider from 'vue-slider-component';
   import vSelect from 'vue-select';
   import VJstree from 'vue-jstree';
+  import arrayCompare from 'array-compare';
+  import lodash from 'lodash';
+  import VueLodash from 'vue-lodash';
+
+  Vue.use(VueLodash, lodash);
 
   export default {
-    name: 'OtherWorld',
+    name: 'Status',
     components: {
       vueSlider,
       vSelect,
@@ -54,7 +60,9 @@
     data() {
       return {
         numDivs: [],
+        oldNumDivs: [],
         minMax: [0, 0],
+        oldMinMax: [0, 0],
         minMaxScale: { min: 0, max: 1 },
         avgUse: {},
         data: {},
@@ -66,9 +74,12 @@
         oldSelectedItemStock: null,
       };
     },
+    created() {
+      this.setTreeSelected(this.$root.$data.data, []);
+    },
     updated() {
-      this.getUsageData();
-      this.getStockData();
+      this.getUsageAndStockData();
+      this.postThreshold(this);
     },
     methods: {
       addOrg(obj) {
@@ -114,6 +125,8 @@
       },
       setItemStock(val) {
         this.selectedItemStock = val;
+        this.disabled = false;
+        this.fetchThreshold();
       },
       fetchStockItems() {
         this.$http.get(`${Vue.config.dhis2url}/api/dataElements?paging=false`, {
@@ -124,43 +137,118 @@
           this.stockItems = response.body.dataElements;
         });
       },
-      getUsageData() {
-        this.numDivs.forEach((id, i) => {
-          if (this.selectedItemUsage && this.numDivs[i] && this.numDivs[i] !== 0
-            && !this.data[this.numDivs[i]]) {
-            this.$http.get(`${Vue.config.dhis2url}/api/26/analytics?dimension=dx:${this.selectedItemUsage.id}`
-              + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${id}`, {
-                headers: {
-                  Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-                },
-              }).then((response) => {
-                let totalUse = 0;
-                response.body.rows.forEach((month) => {
-                  totalUse += parseInt(month[3], 10);
+      getUsageAndStockData() {
+        if (arrayCompare(this.numDivs, this.oldNumDivs, 'id').missing.length > 0) {
+          this.oldNumDivs = Array.from(this.numDivs);
+          this.numDivs.forEach((obj, i) => {
+            if (this.selectedItemUsage && this.numDivs[i] && this.numDivs[i] !== 0
+              && !this.data[this.numDivs[i]] && obj.id !== 0) {
+              this.$http.get(`${Vue.config.dhis2url}/api/26/analytics?dimension=dx:${this.selectedItemUsage.id}`
+                + `&dimension=pe:LAST_12_MONTHS&dimension=ou:${obj.id}`, {
+                  headers: {
+                    Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+                  },
+                }).then((response) => {
+                  let totalUse = 0;
+                  response.body.rows.forEach((month) => {
+                    totalUse += parseInt(month[3], 10);
+                  });
+                  Vue.set(this.avgUse, obj.id, totalUse / 12);
                 });
-                Vue.set(this.avgUse, id, totalUse / 12);
-              });
-          }
-        });
+              this.$http.get(`${Vue.config.dhis2url}/api/26/analytics?dimension=dx:${this.selectedItemStock.id}`
+                + `&dimension=pe:LAST_MONTH&dimension=ou:${obj.id}`, {
+                  headers: {
+                    Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+                  },
+                }).then((response) => {
+                  if (response.body.rows.length > 0 && response.body.rows[0][3] * 1.25
+                    > this.minMaxScale.max) {
+                    this.minMaxScale.max = response.body.rows[0][3] * 1.25;
+                  }
+                  Vue.set(this.data, obj.id, response.body);
+                });
+            }
+          });
+        }
       },
-      getStockData() {
-        this.numDivs.forEach((id, i) => {
-          if (this.selectedItemStock && this.numDivs[i] && this.numDivs[i] !== 0
-            && !this.data[this.numDivs[i]]) {
-            this.$http.get(`${Vue.config.dhis2url}/api/26/analytics?dimension=dx:${this.selectedItemStock.id}`
-              + `&dimension=pe:LAST_MONTH&dimension=ou:${id}`, {
+      postThreshold: lodash.debounce((v) => {
+        if (v.selectedItemStock && v.oldMinMax !== v.minMax) {
+          v.$http.put(`${Vue.config.dhis2url}/api/userDataStore/Kokeriet/${v.selectedItemStock.id}`, {
+            min: v.minMax[0],
+            max: v.minMax[1],
+          }, {
+            headers: {
+              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+              ContentType: 'application/json',
+            },
+          }).then(null, (response) => {
+            if (response.status === 404) { // in case there is no previous entry
+              v.$http.post(`${Vue.config.dhis2url}/api/userDataStore/Kokeriet/${v.selectedItemStock.id}`, {
+                min: v.minMax[0],
+                max: v.minMax[1],
+              }, {
+                headers: {
+                  Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+                  ContentType: 'application/json',
+                },
+              });
+            }
+          });
+        }
+      }, 2000),
+      fetchThreshold() {
+        if (this.selectedItemStock) {
+          this.$http.get(`${Vue.config.dhis2url}/api/userDataStore/Kokeriet/${this.selectedItemStock.id}`, {
+            headers: {
+              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+            },
+          }).then((response) => {
+            if (response.body.max * 1.25 > this.minMaxScale.max) {
+              Vue.set(this.minMaxScale, 'max', response.body.max * 1.25);
+            }
+            Vue.set(this, 'minMax', [response.body.min, response.body.max]);
+            Vue.set(this, 'oldMinMax', [response.body.min, response.body.max]);
+          }, (response) => {
+            if (response.status === 404) {
+              this.$http.get(`${Vue.config.dhis2url}/api/dataStore/Kokeriet/${this.selectedItemStock.id}`, {
                 headers: {
                   Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
                 },
-              }).then((response) => {
-                this.disabled = false;
-                if (response.body.rows[0][3] * 1.25 > this.minMaxScale.max) {
-                  this.minMaxScale.max = response.body.rows[0][3] * 1.25;
+              }).then((response2) => {
+                if (response2.body.max * 1.25 > this.minMaxScale.max) {
+                  Vue.set(this.minMaxScale, 'max', response2.body.max * 1.25);
                 }
-                Vue.set(this.data, id, response.body);
+                Vue.set(this, 'minMax', [response2.body.min, response2.body.max]);
+                Vue.set(this, 'oldMinMax', [response2.body.min, response2.body.max]);
               });
-          }
-        });
+            }
+          });
+        }
+      },
+      postAdminThreshold() {
+        if (this.selectedItemStock) {
+          this.$http.put(`${Vue.config.dhis2url}/api/dataStore/Kokeriet/${this.selectedItemStock.id}`, {
+            min: this.minMax[0],
+            max: this.minMax[1],
+          }, {
+            headers: {
+              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+              ContentType: 'application/json',
+            },
+          }).then(null, (response) => {
+            if (response.status === 404) { // in case there is no previous entry
+              this.$http.post(`${Vue.config.dhis2url}/api/dataStore/Kokeriet/${this.selectedItemStock.id}`, {
+                min: this.minMax[0],
+                max: this.minMax[1],
+              }, {
+                headers: {
+                  Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+                  ContentType: 'application/json',
+                },
+              });
+            }
+          });
+        }
       },
     },
   };
@@ -342,6 +430,22 @@
     box-sizing: border-box;
     height: 35px;
   }
+
+  .small {
+    width: calc(25% - 2px) !important;
+  }
+
+  .admin {
+    display: inline-block;
+    height: 32px;
+    line-height: 30px;
+    width: calc(50% - 9px);
+    border: 1px solid #3F51B5;
+    color: #3F51B5;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
 
   .slide {
     margin: -45px auto 0 auto;

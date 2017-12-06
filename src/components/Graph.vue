@@ -1,6 +1,6 @@
 <template>
   <div class="hello">
-    <div id="menu"><a href="#/"><div class="sel">Graph</div></a><a href="#/other"><div>Stock Status</div></a></div>
+    <div id="menu"><a href="#/"><div class="sel">Graph</div></a><a href="#/status"><div>Stock Status</div></a></div>
     <div class="menu">
       <div class="topbar">
         <div>
@@ -12,15 +12,16 @@
           <p>Stock item: </p>
           <v-select :on-change="setStockItem" label="displayName" :options="$root.$data.stockItems"></v-select>
           <div class="things">
-            <input class="numin" v-model="value[0]" type="number" :disabled="disabled">
-            <input class="numin" v-model="value[1]" type="number" :disabled="disabled">
+            <input class="numin" v-bind:class="{small: $root.$data.admin}" v-model="value[0]" type="number" :disabled="disabled">
+            <input class="numin" v-bind:class="{small: $root.$data.admin}" v-model="value[1]" type="number" :disabled="disabled">
+            <div class="admin" v-if="$root.$data.admin" v-on:click="postAdminThreshold(this)">Set default</div>
           </div>
         </div>
       </div>
       <vue-slider width="95%" tooltip="hover" class="slide" :slider-style="{'background-color': '#3F51B5'}" :process-style="{'background-color': '#3F51B5'}" :tooltip-style="{'background-color': '#3F51B5', 'border': '1px solid #3F51B5'}" v-model="value" :min="min" :max="max" :disabled="disabled"></vue-slider>
       <v-jstree v-if="seen" class="tree-box" :data="$root.$data.data" whole-row @item-click="itemClick"></v-jstree>
     </div>
-    <line-example id="gE" ref="graphElem" :chart-data="datacollection" :options="options"></line-example>
+    <line-chart id="gE" ref="graphElem" :chart-data="datacollection" :options="charOptions"></line-chart>
   </div>
 </template>
 
@@ -31,9 +32,10 @@
   import VJstree from 'vue-jstree';
   import vueSlider from 'vue-slider-component';
   import vSelect from 'vue-select';
-  import LineExample from './LineChart.jsx';
+  import LineChart from './utils/LineChart.jsx';
 
   Vue.use(VueLodash, lodash);
+
   function calculateGradientFill(ctx, scale, height, baseColor, gradientColor, gradientColor2, value,
     value2) {
     const yPos = scale.getPixelForValue(value);
@@ -59,9 +61,9 @@
 
 
   export default {
-    name: 'HelloWorld',
+    name: 'Graph',
     components: {
-      LineExample,
+      LineChart,
       vueSlider,
       VJstree,
       vSelect,
@@ -71,7 +73,6 @@
         stockData: {},
         oldItem: null,
         oldOrg: null,
-        oldValue: null,
         selectedItem: null,
         selectedOrg: null,
         disabled: true,
@@ -82,8 +83,12 @@
           0,
           0,
         ],
+        oldValue: [
+          0,
+          0,
+        ],
         datacollection: {},
-        options: {
+        charOptions: {
           scales: {
             yAxes: [{
               ticks: {
@@ -100,12 +105,15 @@
             }],
           },
           legend: {
-            display: true,
+            display: false,
           },
           responsive: true,
           maintainAspectRatio: false,
         },
       };
+    },
+    created() {
+      this.setTreeSelected(this.$root.$data.data, null);
     },
     updated() {
       this.getDataForGraph();
@@ -115,7 +123,7 @@
     methods: {
       setOrg(val) {
         this.selectedOrg = val;
-        this.setTreeSelected(this.data, val.id);
+        this.setTreeSelected(this.$root.$data.data, val.id);
       },
       setStockItem(val) {
         this.selectedItem = val.id;
@@ -141,7 +149,6 @@
       getDataForGraph() {
         if (this.selectedItem && this.selectedOrg && (this.selectedItem !== this.oldItem
             || this.selectedOrg !== this.oldOrg)) {
-          this.fetchThreshold();
           const labels = [];
           const datasets = [{
             label: 'Data',
@@ -199,6 +206,7 @@
                 datasets,
               };
               this.max = 1.25 * Math.max(...this.datacollection.datasets[0].data);
+              this.fetchThreshold();
             });
         }
       },
@@ -235,43 +243,83 @@
         }
       },
       postThreshold: lodash.debounce((v) => {
-        v.$http.put(`${Vue.config.dhis2url}/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
-          min: v.value[0],
-          max: v.value[1],
-        }, {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-            ContentType: 'application/json',
-          },
-        }).then((response) => {
-          console.log(response);
-        }, (response) => {
-          if (response.status === 404) { // in case there is no previous entry
-            v.$http.post(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${v.selectedOrg}${v.selectedItem}`, {
-              min: v.value[0],
-              max: v.value[1],
-            }, {
-              headers: {
-                Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-                ContentType: 'application/json',
-              },
-            }).then((response1) => {
-              console.log(response1);
-            });
-          }
-        });
+        if (v.value !== v.oldValue && v.selectedOrg && v.selectedItem) {
+          v.$http.put(`${Vue.config.dhis2url}/api/userDataStore/Kokeriet/${v.selectedOrg.id}${v.selectedItem}`, {
+            min: v.value[0],
+            max: v.value[1],
+          }, {
+            headers: {
+              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+              ContentType: 'application/json',
+            },
+          }).then(() => {
+            Vue.set(v, 'oldValue', v.value);
+          }, (response) => {
+            if (response.status === 404) { // in case there is no previous entry
+              v.$http.post(`${Vue.config.dhis2url}/api/userDataStore/Kokeriet/${v.selectedOrg.id}${v.selectedItem}`, {
+                min: v.value[0],
+                max: v.value[1],
+              }, {
+                headers: {
+                  Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+                  ContentType: 'application/json',
+                },
+              }).then(() => {
+                Vue.set(v, 'oldValue', v.value);
+              });
+            }
+          });
+        }
       }, 2000),
       fetchThreshold() {
-        this.$http.get(`https://inf5750.dhis2.org/training/api/dataStore/Kokeriet/${this.selectedOrg}${this.selectedItem}`, {
-          headers: {
-            Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
-          },
-        }).then((response) => {
-          this.value[0] = response.body.min;
-          this.value[1] = response.body.max;
-          this.updateMinMax();
-          Vue.set(this, this.value, this.min, this.max);
-        });
+        if (this.selectedOrg && this.selectedItem) {
+          this.$http.get(`${Vue.config.dhis2url}/api/userDataStore/Kokeriet/${this.selectedOrg.id}${this.selectedItem}`, {
+            headers: {
+              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+            },
+          }).then((response) => {
+            Vue.set(this, 'value', [response.body.min, response.body.max]);
+            Vue.set(this, 'oldValue', [response.body.min, response.body.max]);
+            this.updateMinMax();
+          }, (response) => {
+            if (response.status === 404) {
+              this.$http.get(`${Vue.config.dhis2url}/api/dataStore/Kokeriet/${this.selectedOrg.id}${this.selectedItem}`, {
+                headers: {
+                  Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+                },
+              }).then((response2) => {
+                Vue.set(this, 'value', [response2.body.min, response2.body.max]);
+                Vue.set(this, 'oldValue', [response2.body.min, response2.body.max]);
+                this.updateMinMax();
+              });
+            }
+          });
+        }
+      },
+      postAdminThreshold() {
+        if (this.selectedOrg && this.selectedItem) {
+          this.$http.put(`${Vue.config.dhis2url}/api/dataStore/Kokeriet/${this.selectedOrg.id}${this.selectedItem}`, {
+            min: this.value[0],
+            max: this.value[1],
+          }, {
+            headers: {
+              Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+              ContentType: 'application/json',
+            },
+          }).then(null, (response) => {
+            if (response.status === 404) { // in case there is no previous entry
+              this.$http.post(`${Vue.config.dhis2url}/api/dataStore/Kokeriet/${this.selectedOrg.id}${this.selectedItem}`, {
+                min: this.value[0],
+                max: this.value[1],
+              }, {
+                headers: {
+                  Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+                  ContentType: 'application/json',
+                },
+              });
+            }
+          });
+        }
       },
     },
   };
@@ -402,6 +450,21 @@
     border-radius: 4px;
     box-sizing: border-box;
     height: 35px;
+  }
+
+  .small {
+    width: calc(25% - 2px) !important;
+  }
+
+  .admin {
+    display: inline-block;
+    height: 32px;
+    line-height: 30px;
+    width: calc(50% - 9px);
+    border: 1px solid #3F51B5;
+    color: #3F51B5;
+    border-radius: 5px;
+    cursor: pointer;
   }
 
   .slide {

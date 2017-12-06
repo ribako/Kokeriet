@@ -8,7 +8,7 @@ import router from './router';
 Vue.config.productionTip = false;
 
 Vue.use(VueResource);
-Vue.config.dhis2url = 'https://inf5750.dhis2.org/demo';
+Vue.config.dhis2url = 'https://inf5750.dhis2.org/training';
 
 /* eslint-disable no-new */
 new Vue({
@@ -20,13 +20,24 @@ new Vue({
     organizations: [],
     stockItems: [],
     data: [],
+    admin: false,
   },
   created() {
     this.fetchOrganizations();
     this.fetchStockItems();
     this.getMaxLevel(0);
+    this.checkAdmin();
   },
   methods: {
+    checkAdmin() {
+      this.$http.get(`${Vue.config.dhis2url}/api/me/authorization`, {
+        headers: {
+          Authorization: 'Basic c3R1ZGVudDpJTkY1NzUwIQ==',
+        },
+      }).then((response) => {
+        this.admin = response.body.includes('F_PROGRAM_DASHBOARD_CONFIG_ADMIN');
+      });
+    },
     fetchOrganizations() {
       this.$http.get(`${Vue.config.dhis2url}/api/organisationUnits?paging=false`, {
         headers: {

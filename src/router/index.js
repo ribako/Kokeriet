@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import Router from 'vue-router';
-import HelloWorld from '@/components/HelloWorld';
-import OtherWorld from '@/components/OtherWorld';
+import Graph from '@/components/Graph';
+import Status from '@/components/Status';
 
 Vue.use(Router);
 
@@ -9,13 +9,13 @@ export default new Router({
   routes: [
     {
       path: '/',
-      name: 'Hello',
-      component: HelloWorld,
+      name: 'Graph',
+      component: Graph,
     },
     {
-      path: '/other',
-      name: 'Other',
-      component: OtherWorld,
+      path: '/status',
+      name: 'Status',
+      component: Status,
     },
   ],
 });
